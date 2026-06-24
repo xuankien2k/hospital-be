@@ -1,4 +1,25 @@
 const Criteria = require('../models/Criteria');
+const mongoose = require('mongoose');
+const Department = require('../models/Department');
+const { CRITERIA_EXCLUDED_DEPARTMENT_NAMES } = require('../constants/departments');
+const { getCriteriaDepartmentFilter, applyDepartmentToCriteria, buildDepartmentIdFilter } = require('../utils/departmentAccess');
+
+async function validateCriteriaDepartmentId(departmentId) {
+    if (!departmentId) {
+        return { ok: false, message: 'Vui lòng chọn khoa/phòng' };
+    }
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+        return { ok: false, message: 'Khoa/phòng không hợp lệ' };
+    }
+    const dept = await Department.findById(departmentId);
+    if (!dept) {
+        return { ok: false, message: 'Khoa/phòng không tồn tại' };
+    }
+    if (CRITERIA_EXCLUDED_DEPARTMENT_NAMES.includes(dept.name)) {
+        return { ok: false, message: 'Không thể gán tiêu chí cho Ban giám đốc' };
+    }
+    return { ok: true, dept };
+}
 
 const normalizeLevels = (levels = []) => {
     if (!Array.isArray(levels)) return levels;
@@ -18,7 +39,7 @@ const normalizeLevels = (levels = []) => {
 // Tạo mới tiêu chí (chỉ admin)
 exports.createCriteria = async (req, res) => {
     try {
-        const { code, name, part, chapter, description, expectedCompletionDate, assignedUser, levels, expectedLevel, expectedLevelCompletionDate } = req.body;
+        const { code, name, part, chapter, description, expectedCompletionDate, assignedUser, levels, expectedLevel, expectedLevelCompletionDate, departmentId } = req.body;
 
         // Kiểm tra trùng mã tiêu chí
         const existing = await Criteria.findOne({ code });
@@ -27,6 +48,12 @@ exports.createCriteria = async (req, res) => {
         }
 
         const normalizedLevels = normalizeLevels(levels);
+
+        const deptCheck = await validateCriteriaDepartmentId(departmentId);
+        if (!deptCheck.ok) {
+            return res.status(400).json({ message: deptCheck.message });
+        }
+
         const newCriteria = new Criteria({
             code,
             name,
@@ -40,6 +67,7 @@ exports.createCriteria = async (req, res) => {
             expectedLevelCompletionDate,
             status: req.body.status !== undefined ? Boolean(req.body.status) : true,
         });
+        await applyDepartmentToCriteria(newCriteria, departmentId);
         newCriteria.currentLevel = Criteria.calculateCurrentLevel(normalizedLevels);
         await newCriteria.save(); // pre-save hook đồng bộ currentLevel / progress / ngày hoàn thành
 
@@ -56,7 +84,7 @@ exports.createCriteria = async (req, res) => {
 // Cập nhật tiêu chí (chỉ admin)
 exports.updateCriteria = async (req, res) => {
     try {
-            const { _id, code, name, part, chapter, description, expectedCompletionDate, assignedUser, levels, expectedLevel, expectedLevelCompletionDate, status } = req.body;
+            const { _id, code, name, part, chapter, description, expectedCompletionDate, assignedUser, levels, expectedLevel, expectedLevelCompletionDate, status, departmentId } = req.body;
 
         const criteria = await Criteria.findById(_id);
         if (!criteria) {
@@ -92,6 +120,13 @@ exports.updateCriteria = async (req, res) => {
             criteria.markModified('levels');
             // Tính lại currentLevel từ payload đã chuẩn hóa (đồng bộ FE; tránh lệch Mongoose subdocument)
             criteria.currentLevel = Criteria.calculateCurrentLevel(normalizedLevels);
+        }
+        if (departmentId !== undefined) {
+            const deptCheck = await validateCriteriaDepartmentId(departmentId);
+            if (!deptCheck.ok) {
+                return res.status(400).json({ message: deptCheck.message });
+            }
+            await applyDepartmentToCriteria(criteria, departmentId);
         }
         if (expectedLevel) criteria.expectedLevel = expectedLevel;
         if (expectedLevelCompletionDate) criteria.expectedLevelCompletionDate = expectedLevelCompletionDate;
@@ -145,39 +180,39 @@ exports.deleteCriteria = async (req, res) => {
 // Lấy danh sách tiêu chí (User chỉ xem tiêu chí được phân công, Admin xem tất cả)
 exports.getList = async (req, res) => {
     try {
-        const { part, chapter, keyword, out_of_date } = req.body;
-        const filter = {};
+        const { part, chapter, keyword, out_of_date, departmentId } = req.body;
+        const andConditions = [];
 
-        if (part) filter.part = part;
-        if (chapter) filter.chapter = chapter;
+        if (part) andConditions.push({ part });
+        if (chapter) andConditions.push({ chapter });
         if (keyword) {
-            filter.$or = [
-                { code: { $regex: keyword, $options: 'i' } },
-                { name: { $regex: keyword, $options: 'i' } }
-            ];
+            andConditions.push({
+                $or: [
+                    { code: { $regex: keyword, $options: 'i' } },
+                    { name: { $regex: keyword, $options: 'i' } },
+                ],
+            });
         }
 
-        // Lọc tiêu chí có expectedLevelCompletionDate > ngày được chỉ định
         if (out_of_date) {
             const dateToCompare = new Date(out_of_date);
-            console.log(dateToCompare);
-            // Kiểm tra nếu ngày hợp lệ
             if (!isNaN(dateToCompare.getTime())) {
-                // Tìm các tiêu chí có ngày hoàn thành dự kiến > ngày được chỉ định
-                filter.expectedLevelCompletionDate = { $lt: dateToCompare };
+                andConditions.push({ expectedLevelCompletionDate: { $lt: dateToCompare } });
             }
         }
 
-        // Ban Giám đốc, Phòng QLCL, Khoa/phòng xem toàn bộ (để chỉnh sửa, phân công); chỉ Cán bộ tiêu chí xem tiêu chí được giao
-        const canSeeAll = ['admin', 'quality_admin', 'director', 'department'].includes(req.user.role);
-        if (!canSeeAll) {
-            filter.assignedUser = req.user.userId;
-        }
+        const deptFilter = await getCriteriaDepartmentFilter(req.user.userId, req.user.role);
+        if (deptFilter) andConditions.push(deptFilter);
 
-        // Populate trường assignedUser để lấy thông tin của user được gán (username, email,...)
+        const departmentFilter = buildDepartmentIdFilter(departmentId);
+        if (departmentFilter) andConditions.push(departmentFilter);
+
+        const filter = andConditions.length > 0 ? { $and: andConditions } : {};
+
         const criterias = await Criteria.find(filter)
             .sort({ code: 1 })
-            .populate('assignedUser', 'username email');
+            .populate('assignedUser', 'username email department departmentId')
+            .populate('departmentId', 'name');
 
         return res.json({
             message: 'Lấy danh sách tiêu chí thành côngg',
@@ -194,7 +229,8 @@ exports.getDetail = async (req, res) => {
     try {
         const { _id } = req.body;
         const criteria = await Criteria.findById(_id)
-            .populate('assignedUser', 'username email'); // populate thông tin người dùng
+            .populate('assignedUser', 'username email department departmentId')
+            .populate('departmentId', 'name');
 
         if (!criteria) {
             return res.status(404).json({ message: 'Không tìm thấy tiêu chí' });

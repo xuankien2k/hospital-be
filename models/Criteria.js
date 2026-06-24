@@ -37,6 +37,7 @@ const criteriaSchema = new Schema({
   description: { type: String, default: '' },
   expectedCompletionDate: { type: Date },
   assignedUser: { type: Schema.Types.ObjectId, ref: 'User' },
+  departmentId: { type: Schema.Types.ObjectId, ref: 'Department', default: null },
   levels: [levelSchema],
   currentLevel: { type: Number, default: 1 }, // Tính bởi calculateCurrentLevel; tối thiểu 1 (không dùng 0).
   criteriaActualCompletionDate: { type: Date }, // Ngày hoàn thành toàn bộ tiêu chí.

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Criteria = require('../models/Criteria');
+const { getCriteriaDepartmentFilter, buildDepartmentIdFilter } = require('../utils/departmentAccess');
 
 // Chương C3, C5 nhân hệ số 2 (hỗ trợ mã dạng C3, C5 hoặc C3.x, C5.x)
 const getChapterCoefficient = (chapter) => {
@@ -12,29 +13,64 @@ const getChapterCoefficient = (chapter) => {
 
 exports.getReport = async (req, res) => {
   try {
-    const filter = {};
-    // Ban Giám đốc, Phòng QLCL (và admin cũ) xem toàn bộ báo cáo; Khoa/phòng và Cán bộ chỉ xem tiêu chí được phân công
-    const canSeeAll = ['admin', 'quality_admin', 'director'].includes(req.user.role);
-    if (!canSeeAll) {
-      filter.assignedUser = req.user.userId;
-    }
-    // Bộ lọc bổ sung nếu có từ client
-    const { part, chapter, keyword, assignedUser: assignedUserFilter } = req.body;
-    if (part) filter.part = part;
-    if (chapter) filter.chapter = chapter;
+    const {
+      part,
+      chapter,
+      keyword,
+      assignedUser: assignedUserFilter,
+      departmentId,
+      notAchieved,
+    } = req.body;
+    const andConditions = [];
+
+    const deptFilter = await getCriteriaDepartmentFilter(req.user.userId, req.user.role);
+    if (deptFilter) andConditions.push(deptFilter);
+
+    const departmentFilter = buildDepartmentIdFilter(departmentId);
+    if (departmentFilter) andConditions.push(departmentFilter);
+
+    if (part) andConditions.push({ part });
+    if (chapter) andConditions.push({ chapter });
     if (keyword) {
-      filter.$or = [
-        { code: { $regex: keyword, $options: 'i' } },
-        { name: { $regex: keyword, $options: 'i' } }
-      ];
-    }
-    // Lọc theo người phụ trách: chỉ role được xem toàn bộ mới áp dụng (còn lại đã bị gán theo user)
-    if (canSeeAll && assignedUserFilter && mongoose.Types.ObjectId.isValid(assignedUserFilter)) {
-      filter.assignedUser = assignedUserFilter;
+      andConditions.push({
+        $or: [
+          { code: { $regex: keyword, $options: 'i' } },
+          { name: { $regex: keyword, $options: 'i' } },
+        ],
+      });
     }
 
-    // Chỉ tính điểm các tiêu chí đang kích hoạt (bản ghi cũ không có trường status vẫn tính)
-    filter.status = { $ne: false };
+    const canSeeAll = !deptFilter;
+    if (canSeeAll && assignedUserFilter && mongoose.Types.ObjectId.isValid(assignedUserFilter)) {
+      andConditions.push({ assignedUser: assignedUserFilter });
+    }
+
+    if (notAchieved) {
+      andConditions.push({
+        $expr: {
+          $lt: [
+            {
+              $cond: {
+                if: { $lte: [{ $ifNull: ['$currentLevel', 0] }, 0] },
+                then: 1,
+                else: '$currentLevel',
+              },
+            },
+            {
+              $cond: {
+                if: { $lte: [{ $ifNull: ['$expectedLevel', 0] }, 0] },
+                then: 1,
+                else: '$expectedLevel',
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    andConditions.push({ status: { $ne: false } });
+
+    const filter = andConditions.length > 0 ? { $and: andConditions } : {};
 
     // Lấy tiêu chí và populate thông tin assignedUser (username, email)
     const criterias = await Criteria.find(filter)

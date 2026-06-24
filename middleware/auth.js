@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'secret_jwt_key';
+
 module.exports = (req, res, next) => {
   const authHeader = req.header('Authorization');
   const token = authHeader && authHeader.split(' ')[1];
@@ -9,7 +11,7 @@ module.exports = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, 'secret_jwt_key'); // thay bằng secret thật
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded; // chứa { userId, role }
     next();
   } catch (error) {

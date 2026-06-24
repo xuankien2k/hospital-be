@@ -7,10 +7,11 @@ const bcrypt = require('bcryptjs');
  * - quality_admin: Phòng Quản lý chất lượng — quản trị tiêu chí, theo dõi tiến độ và báo cáo
  * - department: Khoa/phòng/trung tâm — cập nhật tiến độ tiêu chí được phân công, theo dõi trạng thái đơn vị
  * - criteria_officer: Cán bộ phụ trách tiêu chí — cập nhật nội dung, bổ sung minh chứng, theo dõi tình trạng đánh giá tiêu chí được giao
- * (admin, user giữ lại để tương thích dữ liệu cũ)
+ * - admin: Quản trị viên hệ thống
+ * (user giữ lại để tương thích dữ liệu cũ)
  */
-const ROLES = ['director', 'quality_admin', 'department', 'criteria_officer', 'admin', 'user'];
-const ROLES_MAIN = ['director', 'quality_admin', 'department', 'criteria_officer'];
+const ROLES = ['admin', 'director', 'quality_admin', 'department', 'criteria_officer', 'user'];
+const ROLES_MAIN = ['admin', 'director', 'quality_admin', 'department', 'criteria_officer'];
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -29,6 +30,11 @@ const userSchema = new mongoose.Schema({
   department: {
     type: String,
     default: ''
+  },
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    default: null,
   },
   role: {
     type: String,

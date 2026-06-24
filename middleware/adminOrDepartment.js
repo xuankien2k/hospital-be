@@ -1,3 +1,5 @@
+const { canUpdateUsers: roleCanUpdateUsers } = require('../utils/rolePermissions');
+
 // Danh sách user: chỉ chặn criteria_officer (director, quality_admin, admin, department đều được gọi)
 const canListUsers = (req, res, next) => {
     const role = req.user && req.user.role;
@@ -7,10 +9,10 @@ const canListUsers = (req, res, next) => {
     return res.status(403).json({ message: 'Chỉ Cán bộ phụ trách tiêu chí không có quyền xem danh sách người dùng' });
 };
 
-// Cập nhật user / phân quyền: chỉ admin, quality_admin, department (để Khoa/phòng phân quyền Cán bộ tiêu chí)
+// Cập nhật user / phân quyền: admin, quality_admin, department (Khoa/phòng chỉ phân quyền Cán bộ tiêu chí)
 const canUpdateUsers = (req, res, next) => {
     const role = req.user && req.user.role;
-    if (role === 'admin' || role === 'quality_admin' || role === 'department') {
+    if (roleCanUpdateUsers(role)) {
         return next();
     }
     return res.status(403).json({ message: 'Bạn không có quyền cập nhật người dùng' });

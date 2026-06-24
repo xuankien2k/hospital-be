@@ -2,6 +2,8 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'secret_jwt_key';
+
 // Đăng ký
 exports.register = async (req, res) => {
   try {
@@ -50,7 +52,7 @@ exports.login = async (req, res) => {
       userId: user._id,
       role: user.role
     };
-    const token = jwt.sign(payload, 'secret_jwt_key'); 
+    const token = jwt.sign(payload, JWT_SECRET); 
 
     return res.json({
       message: 'Đăng nhập thành công',

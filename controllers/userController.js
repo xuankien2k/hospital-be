@@ -1,11 +1,13 @@
 const User = require('../models/User');
+const { applyDepartmentToUser, NO_DEPARTMENT_USER_CONDITION } = require('../utils/departmentAccess');
 
 // Danh sách vai trò và mô tả (cho dropdown admin, hiển thị profile)
 const ROLE_LABELS = {
+    admin: 'Quản trị viên (Admin)',
     director: 'Ban Giám đốc',
     quality_admin: 'Phòng Quản lý chất lượng',
     department: 'Khoa/phòng/trung tâm',
-    criteria_officer: 'Cán bộ phụ trách tiêu chí'
+    criteria_officer: 'Cán bộ phụ trách tiêu chí',
 };
 
 // Lấy danh sách vai trò (cho form tạo/sửa user)
@@ -18,7 +20,7 @@ exports.getRoles = (req, res) => {
 exports.getProfile = async (req, res) => {
     try {
         const userId = req.user.userId;
-        const user = await User.findById(userId).select('-password');
+        const user = await User.findById(userId).select('-password').populate('departmentId');
         if (!user) {
             return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         }
@@ -45,32 +47,40 @@ exports.getAllUsers = async (req, res) => {
 
         // Khoa/phòng/trung tâm: xem nhân viên cùng đơn vị, chưa có đơn vị, HOẶC tất cả criteria_officer (để theo dõi/quản lý)
         if (req.user.role === 'department') {
-            const currentUser = await User.findById(req.user.userId).select('department');
-            const dept = currentUser && currentUser.department ? String(currentUser.department).trim() : '';
+            const currentUser = await User.findById(req.user.userId).select('department departmentId');
+            const deptId = currentUser?.departmentId;
+            const dept = currentUser?.department ? String(currentUser.department).trim() : '';
             const keywordPart = filter.$or ? { $or: filter.$or } : {};
             delete filter.$or;
-            if (dept) {
+            if (deptId) {
+                filter.$and = [
+                    keywordPart,
+                    {
+                        $or: [
+                            { departmentId: deptId },
+                            { department: dept },
+                            ...NO_DEPARTMENT_USER_CONDITION.$or,
+                            { role: 'criteria_officer' },
+                        ],
+                    },
+                ];
+            } else if (dept) {
                 filter.$and = [
                     keywordPart,
                     {
                         $or: [
                             { department: dept },
-                            { department: { $in: ['', null] } },
-                            { department: { $exists: false } },
-                            { role: 'criteria_officer' }
-                        ]
-                    }
+                            ...NO_DEPARTMENT_USER_CONDITION.$or,
+                            { role: 'criteria_officer' },
+                        ],
+                    },
                 ];
             } else {
                 filter.$and = [
                     keywordPart,
                     {
-                        $or: [
-                            { department: { $in: ['', null] } },
-                            { department: { $exists: false } },
-                            { role: 'criteria_officer' }
-                        ]
-                    }
+                        $or: [...NO_DEPARTMENT_USER_CONDITION.$or, { role: 'criteria_officer' }],
+                    },
                 ];
             }
         }
@@ -79,6 +89,7 @@ exports.getAllUsers = async (req, res) => {
 
         const users = await User.find(filter)
             .select('-password')
+            .populate('departmentId')
             .skip((page - 1) * limit)
             .limit(limit)
             .sort({ createdAt: -1 });
@@ -102,8 +113,8 @@ exports.getAllUsers = async (req, res) => {
 // Admin tạo user
 exports.createUser = async (req, res) => {
     try {
-        const { username, password, email, department, role } = req.body;
-        const allowedRoles = User.ROLES || ['director', 'quality_admin', 'department', 'criteria_officer'];
+        const { username, password, email, department, departmentId, role } = req.body;
+        const allowedRoles = User.ROLES || ['admin', 'director', 'quality_admin', 'department', 'criteria_officer'];
         const roleToUse = role && allowedRoles.includes(role) ? role : 'criteria_officer';
 
         // Kiểm tra username có tồn tại hay không
@@ -112,13 +123,17 @@ exports.createUser = async (req, res) => {
             return res.status(400).json({ message: 'Tên người dùng đã tồn tại' });
         }
 
+        if (!departmentId) {
+            return res.status(400).json({ message: 'Vui lòng chọn khoa/phòng' });
+        }
+
         const newUser = new User({
             username,
             password,
             email,
-            department,
-            role: roleToUse
+            role: roleToUse,
         });
+        await applyDepartmentToUser(newUser, departmentId || department);
         await newUser.save();
 
         // Loại bỏ trường password trước khi trả về thông tin user
@@ -138,7 +153,7 @@ exports.createUser = async (req, res) => {
 // Admin cập nhật user. Khoa/phòng chỉ được phân quyền role thành criteria_officer cho nhân viên cùng đơn vị.
 exports.updateUser = async (req, res) => {
     try {
-        const { _id, username, password, email, department, role } = req.body;
+        const { _id, username, password, email, department, departmentId, role } = req.body;
 
         if (!_id) {
             return res.status(400).json({ message: 'Không tìm thấy _id người dùng' });
@@ -151,11 +166,14 @@ exports.updateUser = async (req, res) => {
 
         // Khoa/phòng chỉ được phân quyền criteria_officer: cho user cùng đơn vị hoặc chưa có đơn vị (sẽ gán luôn đơn vị)
         if (req.user.role === 'department') {
-            const currentUser = await User.findById(req.user.userId).select('department');
+            const currentUser = await User.findById(req.user.userId).select('department departmentId');
+            const myDeptId = currentUser?.departmentId;
             const myDept = currentUser && currentUser.department ? String(currentUser.department).trim() : null;
             const userDept = user.department ? String(user.department).trim() : '';
-            const sameUnit = myDept && (userDept === myDept);
-            const noUnit = !userDept;
+            const sameUnit =
+                (myDeptId && user.departmentId && user.departmentId.toString() === myDeptId.toString()) ||
+                (myDept && userDept === myDept);
+            const noUnit = !user.departmentId && !userDept;
             if (!currentUser || (!sameUnit && !noUnit)) {
                 return res.status(403).json({ message: 'Bạn chỉ được phân quyền cho nhân viên trong cùng đơn vị hoặc chưa có đơn vị' });
             }
@@ -163,7 +181,11 @@ exports.updateUser = async (req, res) => {
                 return res.status(403).json({ message: 'Khoa/phòng chỉ được phân quyền Cán bộ phụ trách tiêu chí' });
             }
             user.role = 'criteria_officer';
-            if (noUnit && myDept) user.department = myDept; // Gán luôn đơn vị khi phân công nhân viên chưa có đơn vị
+            if (noUnit && myDeptId) {
+                await applyDepartmentToUser(user, myDeptId);
+            } else if (noUnit && myDept) {
+                user.department = myDept;
+            }
             await user.save();
             const userInfo = user.toObject();
             delete userInfo.password;
@@ -183,8 +205,18 @@ exports.updateUser = async (req, res) => {
         }
 
         if (email) user.email = email;
-        if (department) user.department = department;
-        const allowedRoles = User.ROLES || ['director', 'quality_admin', 'department', 'criteria_officer'];
+        if (departmentId !== undefined) {
+            if (!departmentId) {
+                return res.status(400).json({ message: 'Vui lòng chọn khoa/phòng' });
+            }
+            await applyDepartmentToUser(user, departmentId);
+        } else if (department !== undefined) {
+            if (!department) {
+                return res.status(400).json({ message: 'Vui lòng chọn khoa/phòng' });
+            }
+            await applyDepartmentToUser(user, department);
+        }
+        const allowedRoles = User.ROLES || ['admin', 'director', 'quality_admin', 'department', 'criteria_officer'];
         if (role && allowedRoles.includes(role)) user.role = role;
 
         if (password) {
