@@ -1,15 +1,13 @@
 const mongoose = require('mongoose');
 const Criteria = require('../models/Criteria');
 const { getCriteriaDepartmentFilter, buildDepartmentIdFilter } = require('../utils/departmentAccess');
-
-// Chương C3, C5 nhân hệ số 2 (hỗ trợ mã dạng C3, C5 hoặc C3.x, C5.x)
-const getChapterCoefficient = (chapter) => {
-  if (!chapter) return 1;
-  const ch = String(chapter);
-  if (ch === 'C3' || ch === 'C5') return 2;
-  if (ch.startsWith('C3.') || ch.startsWith('C5.')) return 2;
-  return 1;
-};
+const {
+  isExcludedFromEvaluation,
+  buildCriteriaDetail,
+  buildSummary,
+  buildBelowLevel3,
+  buildNotAchievedSubcriteria,
+} = require('../utils/reportMetrics');
 
 exports.getReport = async (req, res) => {
   try {
@@ -72,65 +70,34 @@ exports.getReport = async (req, res) => {
 
     const filter = andConditions.length > 0 ? { $and: andConditions } : {};
 
-    // Lấy tiêu chí và populate thông tin assignedUser (username, email)
     const criterias = await Criteria.find(filter)
       .sort({ code: 1 })
-      .populate('assignedUser', 'username email');
+      .populate('assignedUser', 'username email')
+      .populate('departmentId', 'name');
 
-    let totalWeightedScore = 0;
-    let totalWeight = 0;
-
-    // Tạo báo cáo chi tiết cho từng tiêu chí
-    const criteriaReport = criterias.map(criteria => {
-      const coefficient = getChapterCoefficient(criteria.chapter);
-      totalWeightedScore += (criteria.currentLevel * coefficient);
-      totalWeight += coefficient;
-      
-      return {
-        _id: criteria._id,
-        code: criteria.code,
-        name: criteria.name,
-        currentLevel: criteria.currentLevel,
-        // Ngày hoàn thành tiêu chí nếu có (criteriaActualCompletionDate)
-        criteriaActualCompletionDate: criteria.criteriaActualCompletionDate,
-        // Danh sách các level cùng thông tin ngày hoàn thành (actualCompletionDate) của từng level
-        levels: criteria.levels.map(l => ({
-          levelNumber: l.levelNumber,
-          actualCompletionDate: l.actualCompletionDate,
-          subCriterias: l.subCriterias
-        })),
-        expectedLevel: criteria.expectedLevel,
-        expectedLevelCompletionDate: criteria.expectedLevelCompletionDate,
-        coefficient,
-        part: criteria.part,
-        chapter: criteria.chapter,
-        assignedUser: criteria.assignedUser, // Thông tin người được phân công (username, email)
-        updatedAt: criteria.updatedAt,
-        status: criteria.status,
-        progress: criteria.progress,
-      };
-    });
-
-    const totalCriteria = criterias.length;
-    // Điểm = (tổng level × hệ số chương, C3/C5 x2) / tổng số tiêu chí
-    const overallScore = totalCriteria ? totalWeightedScore / totalCriteria : 0;
-    // Giữ tương thích: trung bình có trọng số theo hệ số chương (khác công thức điểm trên)
-    const weightedAverageByChapter = totalWeight ? totalWeightedScore / totalWeight : 0;
+    const appliedCriteria = criterias.filter((c) => !isExcludedFromEvaluation(c.code));
+    const criteriaReport = appliedCriteria.map(buildCriteriaDetail);
+    const summary = buildSummary(appliedCriteria);
 
     return res.json({
-      message: "Báo cáo chất lượng bệnh viện thành công",
+      message: 'Báo cáo chất lượng bệnh viện thành công',
       report: {
-        totalCriteria,
-        totalWeightedScore,
-        totalWeight,
-        overallScore,
-        weightedAverageByChapter,
-        overallAverage: overallScore,
-        details: criteriaReport
-      }
+        summary,
+        belowLevel3: buildBelowLevel3(appliedCriteria),
+        notAchievedSubcriteria: buildNotAchievedSubcriteria(appliedCriteria),
+        matrix: criteriaReport,
+        details: criteriaReport,
+        // Giữ tương thích FE cũ
+        totalCriteria: summary.totalApplied,
+        totalWeightedScore: summary.totalWeightedScore,
+        totalWeight: summary.totalWeight,
+        overallScore: summary.overallScore,
+        weightedAverageByChapter: summary.weightedAverageByChapter,
+        overallAverage: summary.overallScore,
+      },
     });
   } catch (error) {
-    console.error("Lỗi báo cáo:", error);
-    return res.status(500).json({ message: "Lỗi máy chủ" });
+    console.error('Lỗi báo cáo:', error);
+    return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 };
