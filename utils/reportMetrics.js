@@ -5,9 +5,44 @@ const {
   PART_ORDER,
 } = require('../constants/report');
 
-function getChapterCoefficient(chapter) {
-  if (!chapter) return 1;
-  const ch = String(chapter);
+function normalizePartKey(criteria) {
+  const part = String(criteria.part || '').trim();
+  const chapter = String(criteria.chapter || '').trim();
+  const code = String(criteria.code || '').trim();
+
+  if (/^[A-E]$/i.test(part)) return part.toUpperCase();
+
+  const fromPart = part.match(/^([A-E])\s*[\.\):\-]/i);
+  if (fromPart) return fromPart[1].toUpperCase();
+
+  const fromChapter = chapter.match(/^([A-E])\d/i);
+  if (fromChapter) return fromChapter[1].toUpperCase();
+
+  const fromCode = code.match(/^([A-E])\d/i);
+  if (fromCode) return fromCode[1].toUpperCase();
+
+  const first = part.charAt(0).toUpperCase();
+  if (/^[A-E]$/.test(first)) return first;
+
+  return '';
+}
+
+function normalizeChapterKey(chapter, code) {
+  const ch = String(chapter || '').trim();
+  const c = String(code || '').trim();
+
+  const fromChapter = ch.match(/^([A-E]\d+)/i);
+  if (fromChapter) return fromChapter[1].toUpperCase();
+
+  const fromCode = c.match(/^([A-E]\d+)/i);
+  if (fromCode) return fromCode[1].toUpperCase();
+
+  return ch;
+}
+
+function getChapterCoefficient(chapter, code) {
+  const ch = normalizeChapterKey(chapter, code);
+  if (!ch) return 1;
   if (ch === 'C3' || ch === 'C5') return 2;
   if (ch.startsWith('C3.') || ch.startsWith('C5.')) return 2;
   return 1;
@@ -39,7 +74,7 @@ function getDepartmentId(criteria) {
 }
 
 function scoreCriteria(criteria) {
-  const coefficient = getChapterCoefficient(criteria.chapter);
+  const coefficient = getChapterCoefficient(criteria.chapter, criteria.code);
   const level = normalizeLevel(criteria.currentLevel);
   return {
     level,
@@ -90,7 +125,7 @@ function aggregateByLevel(criteriaList) {
 function aggregateByPart(criteriaList) {
   const map = {};
   criteriaList.forEach((c) => {
-    const part = String(c.part || '').trim().toUpperCase();
+    const part = normalizePartKey(c);
     if (!part) return;
     if (!map[part]) {
       map[part] = { part, count: 0, totalWeightedScore: 0, totalWeight: 0 };
@@ -101,7 +136,7 @@ function aggregateByPart(criteriaList) {
     map[part].totalWeight += coefficient;
   });
 
-  return PART_ORDER
+  const known = PART_ORDER
     .filter((p) => map[p])
     .map((part) => {
       const row = map[part];
@@ -114,6 +149,23 @@ function aggregateByPart(criteriaList) {
         totalWeight: row.totalWeight,
       };
     });
+
+  const extra = Object.keys(map)
+    .filter((p) => !PART_ORDER.includes(p))
+    .sort((a, b) => a.localeCompare(b, 'vi'))
+    .map((part) => {
+      const row = map[part];
+      return {
+        part,
+        label: PART_LABELS[part] || part,
+        count: row.count,
+        avgScore: row.count ? row.totalWeightedScore / row.count : 0,
+        totalWeightedScore: row.totalWeightedScore,
+        totalWeight: row.totalWeight,
+      };
+    });
+
+  return [...known, ...extra];
 }
 
 function aggregateByDepartment(criteriaList) {
@@ -195,9 +247,12 @@ function buildNotAchievedCriteria(criteriaList) {
 }
 
 function sortCriteriaForMatrix(a, b) {
-  const partCmp = String(a.part || '').localeCompare(String(b.part || ''), 'vi');
+  const partCmp = normalizePartKey(a).localeCompare(normalizePartKey(b), 'vi');
   if (partCmp !== 0) return partCmp;
-  const chapterCmp = String(a.chapter || '').localeCompare(String(b.chapter || ''), 'vi');
+  const chapterCmp = normalizeChapterKey(a.chapter, a.code).localeCompare(
+    normalizeChapterKey(b.chapter, b.code),
+    'vi',
+  );
   if (chapterCmp !== 0) return chapterCmp;
   return String(a.code || '').localeCompare(String(b.code || ''), 'vi');
 }
@@ -206,39 +261,42 @@ function buildMatrixGrouped(criteriaDetails) {
   const sorted = [...criteriaDetails].sort(sortCriteriaForMatrix);
   const partCounts = {};
   sorted.forEach((c) => {
-    const p = String(c.part || '').trim().toUpperCase();
-    partCounts[p] = (partCounts[p] || 0) + 1;
+    const p = normalizePartKey(c);
+    if (p) partCounts[p] = (partCounts[p] || 0) + 1;
   });
 
   const rows = [];
-  let lastPart = null;
+  let lastPartKey = null;
   let lastChapter = null;
 
   sorted.forEach((c) => {
-    const part = String(c.part || '').trim().toUpperCase();
+    const partKey = normalizePartKey(c);
+    const partRaw = String(c.part || '').trim();
     const chapter = String(c.chapter || '').trim();
 
-    if (part && part !== lastPart) {
-      const partLabel = PART_LABELS[part] || part;
+    if (partKey && partKey !== lastPartKey) {
+      const partLabel = PART_LABELS[partKey] || partKey;
+      const partTitle = partRaw.length > 2 ? partRaw : `${partKey}. ${partLabel}`;
       rows.push({
         rowType: 'part',
         code: '',
-        name: `PHẦN ${part}. ${partLabel.toUpperCase()} (${partCounts[part] || 0})`,
+        name: `PHẦN ${partTitle.toUpperCase()} (${partCounts[partKey] || 0})`,
         currentLevel: '',
         expectedLevel: '',
         departmentName: '',
       });
-      lastPart = part;
+      lastPartKey = partKey;
       lastChapter = null;
     }
 
     if (chapter && chapter !== lastChapter) {
       const chapterItems = sorted.filter(
-        (item) => String(item.part || '').trim().toUpperCase() === part && String(item.chapter || '').trim() === chapter,
+        (item) =>
+          normalizePartKey(item) === partKey && String(item.chapter || '').trim() === chapter,
       );
       rows.push({
         rowType: 'chapter',
-        code: chapter,
+        code: normalizeChapterKey(chapter, c.code),
         name: `${chapter}. (${chapterItems.length} tiêu chí)`,
         currentLevel: '',
         expectedLevel: '',
@@ -297,6 +355,8 @@ module.exports = {
   EXCLUDED_CRITERIA_CODES,
   getChapterCoefficient,
   normalizeLevel,
+  normalizePartKey,
+  normalizeChapterKey,
   isExcludedFromEvaluation,
   buildCriteriaDetail,
   buildSummary,
