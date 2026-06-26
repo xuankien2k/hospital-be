@@ -161,33 +161,104 @@ function buildBelowLevel3(criteriaList) {
     }));
 }
 
-function buildNotAchievedSubcriteria(criteriaList) {
-  const rows = [];
-  criteriaList.forEach((c) => {
-    const departmentName = getDepartmentName(c);
-    const currentLevel = normalizeLevel(c.currentLevel);
-    const expectedLevel = normalizeLevel(c.expectedLevel);
+const Criteria = require('../models/Criteria');
 
-    (c.levels || []).forEach((level) => {
-      (level.subCriterias || []).forEach((sub, subIndex) => {
-        if (!sub.status) {
-          rows.push({
-            criteriaId: c._id,
-            code: c.code,
-            criteriaName: c.name,
-            subcriteriaText: sub.text,
-            levelNumber: level.levelNumber,
-            subIndex,
-            currentLevel,
-            expectedLevel,
-            departmentName,
-            part: c.part,
-            chapter: c.chapter,
-          });
-        }
+function getEffectiveCurrentLevel(criteria) {
+  if (criteria.levels && criteria.levels.length > 0) {
+    return Criteria.calculateCurrentLevel(criteria.levels);
+  }
+  return normalizeLevel(criteria.currentLevel);
+}
+
+function getEffectiveExpectedLevel(criteria) {
+  return normalizeLevel(criteria.expectedLevel);
+}
+
+function isCriteriaNotAchieved(criteria) {
+  return getEffectiveCurrentLevel(criteria) < getEffectiveExpectedLevel(criteria);
+}
+
+function buildNotAchievedCriteria(criteriaList) {
+  return criteriaList
+    .filter(isCriteriaNotAchieved)
+    .map((c) => ({
+      _id: c._id,
+      code: c.code,
+      name: c.name,
+      currentLevel: getEffectiveCurrentLevel(c),
+      expectedLevel: getEffectiveExpectedLevel(c),
+      departmentName: getDepartmentName(c),
+      part: c.part,
+      chapter: c.chapter,
+      expectedLevelCompletionDate: c.expectedLevelCompletionDate,
+    }));
+}
+
+function sortCriteriaForMatrix(a, b) {
+  const partCmp = String(a.part || '').localeCompare(String(b.part || ''), 'vi');
+  if (partCmp !== 0) return partCmp;
+  const chapterCmp = String(a.chapter || '').localeCompare(String(b.chapter || ''), 'vi');
+  if (chapterCmp !== 0) return chapterCmp;
+  return String(a.code || '').localeCompare(String(b.code || ''), 'vi');
+}
+
+function buildMatrixGrouped(criteriaDetails) {
+  const sorted = [...criteriaDetails].sort(sortCriteriaForMatrix);
+  const partCounts = {};
+  sorted.forEach((c) => {
+    const p = String(c.part || '').trim().toUpperCase();
+    partCounts[p] = (partCounts[p] || 0) + 1;
+  });
+
+  const rows = [];
+  let lastPart = null;
+  let lastChapter = null;
+
+  sorted.forEach((c) => {
+    const part = String(c.part || '').trim().toUpperCase();
+    const chapter = String(c.chapter || '').trim();
+
+    if (part && part !== lastPart) {
+      const partLabel = PART_LABELS[part] || part;
+      rows.push({
+        rowType: 'part',
+        code: '',
+        name: `PHẦN ${part}. ${partLabel.toUpperCase()} (${partCounts[part] || 0})`,
+        currentLevel: '',
+        expectedLevel: '',
+        departmentName: '',
       });
+      lastPart = part;
+      lastChapter = null;
+    }
+
+    if (chapter && chapter !== lastChapter) {
+      const chapterItems = sorted.filter(
+        (item) => String(item.part || '').trim().toUpperCase() === part && String(item.chapter || '').trim() === chapter,
+      );
+      rows.push({
+        rowType: 'chapter',
+        code: chapter,
+        name: `${chapter}. (${chapterItems.length} tiêu chí)`,
+        currentLevel: '',
+        expectedLevel: '',
+        departmentName: '',
+      });
+      lastChapter = chapter;
+    }
+
+    const current = getEffectiveCurrentLevel(c);
+    const expected = getEffectiveExpectedLevel(c);
+    rows.push({
+      rowType: 'criteria',
+      code: c.code,
+      name: c.name,
+      currentLevel: String(current),
+      expectedLevel: String(expected),
+      departmentName: c.departmentName || 'Chưa gán',
     });
   });
+
   return rows;
 }
 
@@ -230,5 +301,6 @@ module.exports = {
   buildCriteriaDetail,
   buildSummary,
   buildBelowLevel3,
-  buildNotAchievedSubcriteria,
+  buildNotAchievedCriteria,
+  buildMatrixGrouped,
 };

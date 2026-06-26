@@ -1,103 +1,37 @@
-const mongoose = require('mongoose');
-const Criteria = require('../models/Criteria');
-const { getCriteriaDepartmentFilter, buildDepartmentIdFilter } = require('../utils/departmentAccess');
-const {
-  isExcludedFromEvaluation,
-  buildCriteriaDetail,
-  buildSummary,
-  buildBelowLevel3,
-  buildNotAchievedSubcriteria,
-} = require('../utils/reportMetrics');
+const { loadReportData } = require('../services/reportDataService');
+const { exportReportDocx } = require('../services/reportExportService');
 
 exports.getReport = async (req, res) => {
   try {
-    const {
-      part,
-      chapter,
-      keyword,
-      assignedUser: assignedUserFilter,
-      departmentId,
-      notAchieved,
-    } = req.body;
-    const andConditions = [];
-
-    const deptFilter = await getCriteriaDepartmentFilter(req.user.userId, req.user.role);
-    if (deptFilter) andConditions.push(deptFilter);
-
-    const departmentFilter = buildDepartmentIdFilter(departmentId);
-    if (departmentFilter) andConditions.push(departmentFilter);
-
-    if (part) andConditions.push({ part });
-    if (chapter) andConditions.push({ chapter });
-    if (keyword) {
-      andConditions.push({
-        $or: [
-          { code: { $regex: keyword, $options: 'i' } },
-          { name: { $regex: keyword, $options: 'i' } },
-        ],
-      });
-    }
-
-    const canSeeAll = !deptFilter;
-    if (canSeeAll && assignedUserFilter && mongoose.Types.ObjectId.isValid(assignedUserFilter)) {
-      andConditions.push({ assignedUser: assignedUserFilter });
-    }
-
-    if (notAchieved) {
-      andConditions.push({
-        $expr: {
-          $lt: [
-            {
-              $cond: {
-                if: { $lte: [{ $ifNull: ['$currentLevel', 0] }, 0] },
-                then: 1,
-                else: '$currentLevel',
-              },
-            },
-            {
-              $cond: {
-                if: { $lte: [{ $ifNull: ['$expectedLevel', 0] }, 0] },
-                then: 1,
-                else: '$expectedLevel',
-              },
-            },
-          ],
-        },
-      });
-    }
-
-    andConditions.push({ status: { $ne: false } });
-
-    const filter = andConditions.length > 0 ? { $and: andConditions } : {};
-
-    const criterias = await Criteria.find(filter)
-      .sort({ code: 1 })
-      .populate('assignedUser', 'username email')
-      .populate('departmentId', 'name');
-
-    const appliedCriteria = criterias.filter((c) => !isExcludedFromEvaluation(c.code));
-    const criteriaReport = appliedCriteria.map(buildCriteriaDetail);
-    const summary = buildSummary(appliedCriteria);
-
+    const report = await loadReportData(req);
     return res.json({
       message: 'Báo cáo chất lượng bệnh viện thành công',
-      report: {
-        summary,
-        belowLevel3: buildBelowLevel3(appliedCriteria),
-        notAchievedSubcriteria: buildNotAchievedSubcriteria(appliedCriteria),
-        matrix: criteriaReport,
-        details: criteriaReport,
-        // Giữ tương thích FE cũ
-        totalCriteria: summary.totalApplied,
-        totalWeightedScore: summary.totalWeightedScore,
-        totalWeight: summary.totalWeight,
-        overallScore: summary.overallScore,
-        weightedAverageByChapter: summary.weightedAverageByChapter,
-        overallAverage: summary.overallScore,
-      },
+      report,
     });
   } catch (error) {
     console.error('Lỗi báo cáo:', error);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+};
+
+exports.exportReport = async (req, res) => {
+  try {
+    const report = await loadReportData(req);
+    const buffer = exportReportDocx(report);
+    const filename = `Bao-cao-CTCL-${new Date().toISOString().slice(0, 10)}.docx`;
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error) {
+    console.error('Lỗi xuất báo cáo:', error);
+    const message =
+      error.message && error.message.includes('template')
+        ? error.message
+        : 'Không xuất được báo cáo Word';
+    return res.status(500).json({ message });
   }
 };
