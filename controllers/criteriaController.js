@@ -2,7 +2,7 @@ const Criteria = require('../models/Criteria');
 const mongoose = require('mongoose');
 const Department = require('../models/Department');
 const { CRITERIA_EXCLUDED_DEPARTMENT_NAMES } = require('../constants/departments');
-const { getCriteriaDepartmentFilter, applyDepartmentToCriteria, buildDepartmentIdFilter } = require('../utils/departmentAccess');
+const { getCriteriaDepartmentFilter, applyDepartmentToCriteria, buildDepartmentIdFilter, getUserWithDepartment, assertDepartmentHeadCanAssignDepartment } = require('../utils/departmentAccess');
 
 async function validateCriteriaDepartmentId(departmentId) {
     if (!departmentId) {
@@ -36,7 +36,7 @@ const normalizeLevels = (levels = []) => {
     }));
 };
 
-// Tạo mới tiêu chí (chỉ admin)
+// Tạo mới tiêu chí (admin, quality_admin, trưởng khoa/phòng)
 exports.createCriteria = async (req, res) => {
     try {
         const { code, name, part, chapter, description, expectedCompletionDate, assignedUser, levels, expectedLevel, expectedLevelCompletionDate, departmentId } = req.body;
@@ -52,6 +52,13 @@ exports.createCriteria = async (req, res) => {
         const deptCheck = await validateCriteriaDepartmentId(departmentId);
         if (!deptCheck.ok) {
             return res.status(400).json({ message: deptCheck.message });
+        }
+
+        if (req.user?.role === 'department') {
+            const access = await assertDepartmentHeadCanAssignDepartment(req.user.userId, departmentId);
+            if (!access.ok) {
+                return res.status(403).json({ message: access.message });
+            }
         }
 
         const newCriteria = new Criteria({
@@ -97,6 +104,21 @@ exports.updateCriteria = async (req, res) => {
                 criteria.assignedUser && criteria.assignedUser.toString() === req.user.userId;
             if (!isAssignedToCurrentUser) {
                 return res.status(403).json({ message: 'Bạn chỉ được cập nhật tiêu chí được phân công' });
+            }
+        }
+
+        if (req.user?.role === 'department') {
+            const user = await getUserWithDepartment(req.user.userId);
+            const userDeptId = user?.departmentId?._id || user?.departmentId;
+            const criteriaDeptId = criteria.departmentId;
+            if (criteriaDeptId && userDeptId && String(criteriaDeptId) !== String(userDeptId)) {
+                return res.status(403).json({ message: 'Bạn chỉ được sửa tiêu chí thuộc khoa/phòng của mình' });
+            }
+            if (departmentId !== undefined) {
+                const access = await assertDepartmentHeadCanAssignDepartment(req.user.userId, departmentId);
+                if (!access.ok) {
+                    return res.status(403).json({ message: access.message });
+                }
             }
         }
 

@@ -20,6 +20,10 @@ function canUpdateUsers(role) {
   return isContentAdmin(role) || role === 'department';
 }
 
+function canCreateCriteria(role) {
+  return isContentAdmin(role) || role === 'department';
+}
+
 module.exports = {
   SYSTEM_ADMIN_ROLE,
   CONTENT_ADMIN_ROLES,
@@ -27,4 +31,5 @@ module.exports = {
   isContentAdmin,
   canViewAllCriteria,
   canUpdateUsers,
+  canCreateCriteria,
 };

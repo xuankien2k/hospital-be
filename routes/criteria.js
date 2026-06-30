@@ -3,10 +3,10 @@ const router = express.Router();
 const criteriaController = require('../controllers/criteriaController');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
-const { canManageCriteria } = require('../middleware/adminOrDepartment');
+const { canManageCriteria, canCreateCriteria } = require('../middleware/adminOrDepartment');
 
-// Tạo tiêu chí (chỉ admin)
-router.post('/create', auth, admin, criteriaController.createCriteria);
+// Tạo tiêu chí (admin, quality_admin, trưởng khoa/phòng)
+router.post('/create', auth, canCreateCriteria, criteriaController.createCriteria);
 
 // Cập nhật tiêu chí (admin hoặc Khoa/phòng — để chỉnh sửa, phân công)
 router.post('/update', auth, canManageCriteria, criteriaController.updateCriteria);

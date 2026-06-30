@@ -124,6 +124,19 @@ function buildDepartmentIdFilter(departmentId) {
   return { departmentId: new mongoose.Types.ObjectId(String(departmentId)) };
 }
 
+/** Trưởng khoa/phòng chỉ được gán tiêu chí vào khoa/phòng của mình. */
+async function assertDepartmentHeadCanAssignDepartment(userId, departmentId) {
+  const user = await getUserWithDepartment(userId);
+  const userDeptId = user?.departmentId?._id || user?.departmentId;
+  if (!userDeptId) {
+    return { ok: false, message: 'Tài khoản chưa được gán khoa/phòng' };
+  }
+  if (String(userDeptId) !== String(departmentId)) {
+    return { ok: false, message: 'Trưởng khoa/phòng chỉ được tạo tiêu chí thuộc khoa/phòng của mình' };
+  }
+  return { ok: true };
+}
+
 module.exports = {
   getUserWithDepartment,
   getDepartmentName,
@@ -133,5 +146,6 @@ module.exports = {
   applyDepartmentToUser,
   applyDepartmentToCriteria,
   buildDepartmentIdFilter,
+  assertDepartmentHeadCanAssignDepartment,
   NO_DEPARTMENT_USER_CONDITION,
 };

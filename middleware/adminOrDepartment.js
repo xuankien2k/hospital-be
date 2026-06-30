@@ -1,4 +1,4 @@
-const { canUpdateUsers: roleCanUpdateUsers } = require('../utils/rolePermissions');
+const { canUpdateUsers: roleCanUpdateUsers, canCreateCriteria: roleCanCreateCriteria } = require('../utils/rolePermissions');
 
 // Danh sách user: chỉ chặn criteria_officer (director, quality_admin, admin, department đều được gọi)
 const canListUsers = (req, res, next) => {
@@ -28,4 +28,13 @@ const canManageCriteria = (req, res, next) => {
     return res.status(403).json({ message: 'Bạn không có quyền quản lý tiêu chí' });
 };
 
-module.exports = { canListUsers, canUpdateUsers, canManageCriteria };
+// Tạo tiêu chí: admin, quality_admin, trưởng khoa/phòng (department)
+const canCreateCriteria = (req, res, next) => {
+    const role = req.user && req.user.role;
+    if (roleCanCreateCriteria(role)) {
+        return next();
+    }
+    return res.status(403).json({ message: 'Bạn không có quyền tạo tiêu chí' });
+};
+
+module.exports = { canListUsers, canUpdateUsers, canManageCriteria, canCreateCriteria };
