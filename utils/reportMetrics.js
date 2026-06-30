@@ -5,6 +5,15 @@ const {
   PART_ORDER,
 } = require('../constants/report');
 
+const Criteria = require('../models/Criteria');
+
+function getCriteriaLevel(criteria) {
+  if (criteria.levels && criteria.levels.length > 0) {
+    return Criteria.calculateCurrentLevel(criteria.levels);
+  }
+  return normalizeLevel(criteria.currentLevel);
+}
+
 function normalizePartKey(criteria) {
   const part = String(criteria.part || '').trim();
   const chapter = String(criteria.chapter || '').trim();
@@ -75,12 +84,16 @@ function getDepartmentId(criteria) {
 
 function scoreCriteria(criteria) {
   const coefficient = getChapterCoefficient(criteria.chapter, criteria.code);
-  const level = normalizeLevel(criteria.currentLevel);
+  const level = getCriteriaLevel(criteria);
   return {
     level,
     coefficient,
     weightedScore: level * coefficient,
   };
+}
+
+function getPlainLevelScore(criteria) {
+  return getCriteriaLevel(criteria);
 }
 
 function buildCriteriaDetail(criteria) {
@@ -128,42 +141,26 @@ function aggregateByPart(criteriaList) {
     const part = normalizePartKey(c);
     if (!part) return;
     if (!map[part]) {
-      map[part] = { part, count: 0, totalWeightedScore: 0, totalWeight: 0 };
+      map[part] = { part, count: 0, totalLevelScore: 0 };
     }
-    const { weightedScore, coefficient } = scoreCriteria(c);
+    const level = getPlainLevelScore(c);
     map[part].count += 1;
-    map[part].totalWeightedScore += weightedScore;
-    map[part].totalWeight += coefficient;
+    map[part].totalLevelScore += level;
   });
 
-  const known = PART_ORDER
-    .filter((p) => map[p])
-    .map((part) => {
-      const row = map[part];
-      return {
-        part,
-        label: PART_LABELS[part] || part,
-        count: row.count,
-        avgScore: row.count ? row.totalWeightedScore / row.count : 0,
-        totalWeightedScore: row.totalWeightedScore,
-        totalWeight: row.totalWeight,
-      };
-    });
+  const buildRow = (part, row) => ({
+    part,
+    label: PART_LABELS[part] || part,
+    count: row.count,
+    avgScore: row.count ? row.totalLevelScore / row.count : 0,
+  });
+
+  const known = PART_ORDER.filter((p) => map[p]).map((part) => buildRow(part, map[part]));
 
   const extra = Object.keys(map)
     .filter((p) => !PART_ORDER.includes(p))
     .sort((a, b) => a.localeCompare(b, 'vi'))
-    .map((part) => {
-      const row = map[part];
-      return {
-        part,
-        label: PART_LABELS[part] || part,
-        count: row.count,
-        avgScore: row.count ? row.totalWeightedScore / row.count : 0,
-        totalWeightedScore: row.totalWeightedScore,
-        totalWeight: row.totalWeight,
-      };
-    });
+    .map((part) => buildRow(part, map[part]));
 
   return [...known, ...extra];
 }
@@ -178,20 +175,18 @@ function aggregateByDepartment(criteriaList) {
         departmentId: deptId === 'unassigned' ? null : deptId,
         name: deptName,
         count: 0,
-        totalWeightedScore: 0,
-        totalWeight: 0,
+        totalLevelScore: 0,
       };
     }
-    const { weightedScore, coefficient } = scoreCriteria(c);
+    const level = getPlainLevelScore(c);
     map[deptId].count += 1;
-    map[deptId].totalWeightedScore += weightedScore;
-    map[deptId].totalWeight += coefficient;
+    map[deptId].totalLevelScore += level;
   });
 
   const rows = Object.values(map)
     .map((row) => ({
       ...row,
-      avgScore: row.count ? row.totalWeightedScore / row.count : 0,
+      avgScore: row.count ? row.totalLevelScore / row.count : 0,
     }))
     .sort((a, b) => b.avgScore - a.avgScore);
 
@@ -213,13 +208,8 @@ function buildBelowLevel3(criteriaList) {
     }));
 }
 
-const Criteria = require('../models/Criteria');
-
 function getEffectiveCurrentLevel(criteria) {
-  if (criteria.levels && criteria.levels.length > 0) {
-    return Criteria.calculateCurrentLevel(criteria.levels);
-  }
-  return normalizeLevel(criteria.currentLevel);
+  return getCriteriaLevel(criteria);
 }
 
 function getEffectiveExpectedLevel(criteria) {
