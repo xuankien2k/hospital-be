@@ -9,6 +9,7 @@ const { canListUsers, canUpdateUsers } = require('../middleware/adminOrDepartmen
 router.get('/roles', auth, userController.getRoles);
 // User thường: xem profile
 router.get('/profile', auth, userController.getProfile);
+router.post('/change-password', auth, userController.changePassword);
 
 // Chỉ criteria_officer không được gọi list; Khoa/phòng chỉ thấy user cùng đơn vị
 router.post('/list', auth, canListUsers, userController.getAllUsers);

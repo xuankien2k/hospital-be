@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const { applyDepartmentToUser, NO_DEPARTMENT_USER_CONDITION } = require('../utils/departmentAccess');
 
 // Danh sách vai trò và mô tả (cho dropdown admin, hiển thị profile)
@@ -27,6 +28,42 @@ exports.getProfile = async (req, res) => {
         return res.json(user);
     } catch (error) {
         console.error('Lỗi lấy profile:', error);
+        return res.status(500).json({ message: 'Lỗi máy chủ' });
+    }
+};
+
+exports.changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body || {};
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: 'Vui lòng nhập đủ thông tin' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'Mật khẩu mới không khớp' });
+        }
+
+        if (newPassword === currentPassword) {
+            return res.status(400).json({ message: 'Mật khẩu mới phải khác mật khẩu hiện tại' });
+        }
+
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Mật khẩu hiện tại không đúng' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        return res.json({ message: 'Đổi mật khẩu thành công' });
+    } catch (error) {
+        console.error('Lỗi đổi mật khẩu:', error);
         return res.status(500).json({ message: 'Lỗi máy chủ' });
     }
 };
