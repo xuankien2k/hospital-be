@@ -141,11 +141,20 @@ function aggregateByPart(criteriaList) {
     const part = normalizePartKey(c);
     if (!part) return;
     if (!map[part]) {
-      map[part] = { part, count: 0, totalLevelScore: 0 };
+      map[part] = {
+        part,
+        count: 0,
+        totalLevelScore: 0,
+        byLevel: { level1: 0, level2: 0, level3: 0, level4: 0, level5: 0 },
+      };
     }
     const level = getPlainLevelScore(c);
+    const currentLevel = normalizeLevel(c.currentLevel);
     map[part].count += 1;
     map[part].totalLevelScore += level;
+    if (currentLevel >= 1 && currentLevel <= 5) {
+      map[part].byLevel[`level${currentLevel}`] += 1;
+    }
   });
 
   const buildRow = (part, row) => ({
@@ -153,6 +162,7 @@ function aggregateByPart(criteriaList) {
     label: PART_LABELS[part] || part,
     count: row.count,
     avgScore: row.count ? row.totalLevelScore / row.count : 0,
+    byLevel: row.byLevel,
   });
 
   const known = PART_ORDER.filter((p) => map[p]).map((part) => buildRow(part, map[part]));
