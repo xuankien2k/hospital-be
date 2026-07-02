@@ -59,6 +59,12 @@ function getChapterCoefficient(chapter, code) {
 
 function normalizeLevel(value) {
   const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) return 0;
+  return Math.min(5, Math.max(0, Math.round(num)));
+}
+
+function normalizeExpectedLevel(value) {
+  const num = Number(value);
   if (!Number.isFinite(num) || num <= 0) return 1;
   return Math.min(5, Math.max(1, Math.round(num)));
 }
@@ -127,10 +133,10 @@ function buildCriteriaDetail(criteria) {
 }
 
 function aggregateByLevel(criteriaList) {
-  const counts = { level1: 0, level2: 0, level3: 0, level4: 0, level5: 0 };
+  const counts = { level0: 0, level1: 0, level2: 0, level3: 0, level4: 0, level5: 0 };
   criteriaList.forEach((c) => {
-    const lv = normalizeLevel(c.currentLevel);
-    if (lv >= 1 && lv <= 5) counts[`level${lv}`] += 1;
+    const lv = getCriteriaLevel(c);
+    if (lv >= 0 && lv <= 5) counts[`level${lv}`] += 1;
   });
   return counts;
 }
@@ -203,14 +209,14 @@ function aggregateByDepartment(criteriaList) {
   return rows.map((row, index) => ({ ...row, rank: index + 1 }));
 }
 
-function buildBelowLevel3(criteriaList) {
+function buildBelowLevel4(criteriaList) {
   return criteriaList
-    .filter((c) => normalizeLevel(c.currentLevel) < 3)
+    .filter((c) => getCriteriaLevel(c) < 4)
     .map((c) => ({
       _id: c._id,
       code: c.code,
       name: c.name,
-      currentLevel: normalizeLevel(c.currentLevel),
+      currentLevel: getCriteriaLevel(c),
       expectedLevel: c.expectedLevel,
       departmentName: getDepartmentName(c),
       part: c.part,
@@ -360,7 +366,7 @@ module.exports = {
   isExcludedFromEvaluation,
   buildCriteriaDetail,
   buildSummary,
-  buildBelowLevel3,
+  buildBelowLevel4,
   buildNotAchievedCriteria,
   buildMatrixGrouped,
 };

@@ -2,8 +2,11 @@ const Department = require('../models/Department');
 const User = require('../models/User');
 const Criteria = require('../models/Criteria');
 const { DEFAULT_DEPARTMENT_NAMES } = require('../constants/departments');
+const migrateDepartmentNames = require('./migrateDepartmentNames');
 
 async function seedDepartments() {
+  await migrateDepartmentNames();
+
   for (const name of DEFAULT_DEPARTMENT_NAMES) {
     await Department.findOneAndUpdate({ name }, { name }, { upsert: true, new: true });
   }

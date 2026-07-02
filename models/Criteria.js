@@ -39,7 +39,7 @@ const criteriaSchema = new Schema({
   assignedUser: { type: Schema.Types.ObjectId, ref: 'User' },
   departmentId: { type: Schema.Types.ObjectId, ref: 'Department', default: null },
   levels: [levelSchema],
-  currentLevel: { type: Number, default: 1 }, // Tính bởi calculateCurrentLevel; tối thiểu 1 (không dùng 0).
+  currentLevel: { type: Number, default: 0 }, // Tính bởi calculateCurrentLevel; 0 = chưa chọn tiểu mục.
   criteriaActualCompletionDate: { type: Date }, // Ngày hoàn thành toàn bộ tiêu chí.
   // Thêm 2 trường mới
   expectedLevel: { type: Number, default: 1 }, // Mức level dự kiến đạt được
@@ -76,8 +76,18 @@ function normalizeLevelsForCalc(levelsRaw) {
 /**
  * Tính currentLevel từ mảng levels đã chuẩn hóa (cùng quy tắc deriveCurrentLevelFromLevels ở FE).
  */
+function hasAnyCheckedSubcriteria(levels) {
+  if (!levels || !levels.length) return false;
+  return levels.some(
+    (level) =>
+      level.subCriterias &&
+      level.subCriterias.some((sc) => sc.status === true || sc.status === 'true'),
+  );
+}
+
 function calculateCurrentLevelFromNormalized(levels) {
-  if (!levels || levels.length === 0) return 1;
+  if (!levels || levels.length === 0) return 0;
+  if (!hasAnyCheckedSubcriteria(levels)) return 0;
 
   const sortedLevels = levels.slice().sort((a, b) => a.levelNumber - b.levelNumber);
   const level1 = sortedLevels.find((l) => l.levelNumber === 1);
@@ -106,14 +116,14 @@ function calculateCurrentLevelFromNormalized(levels) {
     }
   }
 
-  return currentLevel > 0 ? currentLevel : 1;
+  return currentLevel;
 }
 
 /**
  * Hàm helper tính currentLevel — cùng quy tắc với deriveCurrentLevelFromLevels (FE).
  * - Mức 1 có ít nhất một subCriteria được tích → 1.
  * - Không thì duyệt mức 2→5: full từng mức theo chuỗi; rỗng hoặc chưa full thì dừng.
- * - Không có mức 0: nếu chưa đạt chuỗi nào (kết quả 0) thì mặc định 1.
+ * - Không có tiểu mục nào được chọn → 0.
  */
 function calculateCurrentLevel(levelsRaw) {
   const levels = normalizeLevelsForCalc(levelsRaw);

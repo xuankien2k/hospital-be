@@ -5,7 +5,7 @@ const {
   isExcludedFromEvaluation,
   buildCriteriaDetail,
   buildSummary,
-  buildBelowLevel3,
+  buildBelowLevel4,
   buildNotAchievedCriteria,
 } = require('../utils/reportMetrics');
 
@@ -81,7 +81,7 @@ async function loadReportData(req) {
 
   return {
     summary,
-    belowLevel3: buildBelowLevel3(appliedCriteria),
+    belowLevel4: buildBelowLevel4(appliedCriteria),
     notAchievedCriteria: buildNotAchievedCriteria(appliedCriteria),
     matrix: criteriaReport,
     details: criteriaReport,

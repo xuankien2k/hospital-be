@@ -204,7 +204,7 @@ const doc = new Document({
         ]),
         emptyParagraph(),
 
-        sectionTitleParagraph('IV. DANH SÁCH TIÊU CHÍ DƯỚI MỨC 3'),
+        sectionTitleParagraph('IV. DANH SÁCH CÁC TIÊU CHÍ DƯỚI MỨC 4'),
         makeTable(TABLE_WIDTHS.list6, [
           headerRow(
             ['STT', 'Mã', 'Tên tiêu chí', 'Mức đạt', 'Mức dự kiến', 'Khoa/phòng'],
@@ -212,12 +212,12 @@ const doc = new Document({
           ),
           loopRow(
             [
-              ['{#belowLevel3}{stt}', { center: true }],
+              ['{#belowLevel4}{stt}', { center: true }],
               ['{code}', {}],
               ['{name}', {}],
               ['{currentLevel}', { center: true }],
               ['{expectedLevel}', { center: true }],
-              ['{departmentName}{/belowLevel3}', {}],
+              ['{departmentName}{/belowLevel4}', {}],
             ],
             TABLE_WIDTHS.list6,
           ),

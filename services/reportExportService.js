@@ -44,7 +44,7 @@ function buildExportPayload(report) {
     avgScore: formatNumber(d.avgScore),
   }));
 
-  const belowLevel3 = (report.belowLevel3 || []).map((row, index) => ({
+  const belowLevel4 = (report.belowLevel4 || []).map((row, index) => ({
     stt: String(index + 1),
     code: row.code,
     name: row.name,
@@ -103,7 +103,7 @@ function buildExportPayload(report) {
     level5Percent: formatPercent(byLevel.level5 || 0, totalApplied),
     byPart,
     byDepartment,
-    belowLevel3,
+    belowLevel4,
     notAchieved,
     matrix,
     matrixBelowPlanCodes,
