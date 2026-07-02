@@ -226,7 +226,6 @@ const doc = new Document({
         emptyParagraph(),
 
         sectionTitleParagraph('V. CÁC TIÊU CHÍ CHƯA ĐẠT KẾ HOẠCH'),
-        bodyParagraph('Chi tiết các tiểu mục chưa hoàn thành (cột Ghi chú để trống, người dùng tự nhập).'),
         makeTable(TABLE_WIDTHS.subcriteriaDetail, [
           headerRow(
             [
