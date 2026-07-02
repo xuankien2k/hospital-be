@@ -23,6 +23,7 @@ const TABLE_WIDTHS = {
   byPart: [4500, 1800, 1800],
   department: [700, 3500, 1800, 1400, 1200],
   list6: [600, 1100, 3600, 1000, 1000, 2000],
+  subcriteriaDetail: [900, 900, 900, 3600, 1200, 1800, 1200],
   matrix: [1100, 4000, 1200, 1000, 2100],
 };
 
@@ -225,21 +226,31 @@ const doc = new Document({
         emptyParagraph(),
 
         sectionTitleParagraph('V. CÁC TIÊU CHÍ CHƯA ĐẠT KẾ HOẠCH'),
-        makeTable(TABLE_WIDTHS.list6, [
+        bodyParagraph('Chi tiết các tiểu mục chưa hoàn thành (cột Ghi chú để trống, người dùng tự nhập).'),
+        makeTable(TABLE_WIDTHS.subcriteriaDetail, [
           headerRow(
-            ['STT', 'Mã', 'Tên tiêu chí', 'Mức đạt', 'Kế hoạch', 'Khoa/phòng'],
-            TABLE_WIDTHS.list6,
+            [
+              'Mã TC',
+              'Mức đạt hiện tại',
+              'Mức dự kiến',
+              'Tiểu mục chưa đạt',
+              'Thời gian hoàn thành',
+              'Trách nhiệm',
+              'Ghi chú',
+            ],
+            TABLE_WIDTHS.subcriteriaDetail,
           ),
           loopRow(
             [
-              ['{#notAchieved}{stt}', { center: true }],
-              ['{code}', {}],
-              ['{name}', {}],
+              ['{#notAchievedSubcriteria}{code}', {}],
               ['{currentLevel}', { center: true }],
               ['{expectedLevel}', { center: true }],
-              ['{departmentName}{/notAchieved}', {}],
+              ['{subcriteriaText}', {}],
+              ['{completionDate}', {}],
+              ['{departmentName}', {}],
+              ['{note}{/notAchievedSubcriteria}', {}],
             ],
-            TABLE_WIDTHS.list6,
+            TABLE_WIDTHS.subcriteriaDetail,
           ),
         ]),
         emptyParagraph(),

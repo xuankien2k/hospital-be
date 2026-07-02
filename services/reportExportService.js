@@ -24,6 +24,13 @@ function formatPercent(part, total) {
   return formatNumber((part / total) * 100, 2);
 }
 
+function formatReportDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+}
+
 function buildExportPayload(report) {
   const { summary } = report;
   const byLevel = summary?.byLevel || {};
@@ -53,14 +60,19 @@ function buildExportPayload(report) {
     departmentName: row.departmentName,
   }));
 
-  const notAchieved = (report.notAchievedCriteria || []).map((row, index) => ({
-    stt: String(index + 1),
-    code: row.code,
-    name: row.name,
-    currentLevel: String(row.currentLevel),
-    expectedLevel: String(row.expectedLevel ?? ''),
-    departmentName: row.departmentName,
-  }));
+  const notAchievedSubcriteria = (report.notAchievedSubcriteria || []).map((row) => {
+    const prefix = row.levelNumber ? `Mức ${row.levelNumber}: ` : '';
+    const suffix = row.isDone ? ' (đã đạt)' : '';
+    return {
+      code: row.code,
+      currentLevel: String(row.currentLevel),
+      expectedLevel: String(row.expectedLevel ?? ''),
+      subcriteriaText: `${prefix}${row.subcriteriaText}${suffix}`,
+      completionDate: formatReportDate(row.expectedLevelCompletionDate),
+      departmentName: row.departmentName,
+      note: '',
+    };
+  });
 
   const matrixGrouped = buildMatrixGrouped(report.matrix || []);
   const matrix = matrixGrouped.map((row) => ({
@@ -104,7 +116,7 @@ function buildExportPayload(report) {
     byPart,
     byDepartment,
     belowLevel4,
-    notAchieved,
+    notAchievedSubcriteria,
     matrix,
     matrixBelowPlanCodes,
   };

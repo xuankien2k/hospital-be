@@ -252,6 +252,112 @@ function buildNotAchievedCriteria(criteriaList) {
     }));
 }
 
+function isSubcriteriaDone(sub) {
+  return sub.status === true || sub.status === 'true';
+}
+
+function getLevelSubCriterias(criteria, levelNumber) {
+  const level = (criteria.levels || []).find((item) => Number(item.levelNumber) === levelNumber);
+  return level?.subCriterias || [];
+}
+
+function collectNotAchievedSubcriteriaItems(criteria) {
+  const currentLevel = getEffectiveCurrentLevel(criteria);
+  const expectedLevel = getEffectiveExpectedLevel(criteria);
+  const items = [];
+
+  const pushSubItem = (levelNumber, sub, subIndex, options) => {
+    const text = String(sub.text || '').trim();
+    if (!text) return;
+    items.push({
+      levelNumber,
+      subcriteriaText: text,
+      subIndex,
+      isDone: options.isDone,
+      highlightRed: options.highlightRed,
+    });
+  };
+
+  if (currentLevel === 0) {
+    [2, 3, 4, 5].forEach((levelNumber) => {
+      if (levelNumber > expectedLevel) return;
+      getLevelSubCriterias(criteria, levelNumber).forEach((sub, subIndex) => {
+        if (!isSubcriteriaDone(sub)) {
+          pushSubItem(levelNumber, sub, subIndex, { isDone: false, highlightRed: false });
+        }
+      });
+    });
+  } else if (currentLevel === 1) {
+    getLevelSubCriterias(criteria, 1).forEach((sub, subIndex) => {
+      pushSubItem(1, sub, subIndex, {
+        isDone: isSubcriteriaDone(sub),
+        highlightRed: true,
+      });
+    });
+
+    for (let levelNumber = 2; levelNumber <= expectedLevel; levelNumber += 1) {
+      getLevelSubCriterias(criteria, levelNumber).forEach((sub, subIndex) => {
+        if (!isSubcriteriaDone(sub)) {
+          pushSubItem(levelNumber, sub, subIndex, { isDone: false, highlightRed: false });
+        }
+      });
+    }
+  } else {
+    for (let levelNumber = 2; levelNumber <= expectedLevel; levelNumber += 1) {
+      getLevelSubCriterias(criteria, levelNumber).forEach((sub, subIndex) => {
+        if (!isSubcriteriaDone(sub)) {
+          pushSubItem(levelNumber, sub, subIndex, { isDone: false, highlightRed: false });
+        }
+      });
+    }
+  }
+
+  return items;
+}
+
+function buildNotAchievedSubcriteria(criteriaList) {
+  const sorted = [...criteriaList]
+    .filter(isCriteriaNotAchieved)
+    .sort(sortCriteriaForMatrix);
+
+  const rows = [];
+  let stt = 0;
+
+  sorted.forEach((c) => {
+    const currentLevel = getEffectiveCurrentLevel(c);
+    const expectedLevel = getEffectiveExpectedLevel(c);
+    const departmentName = getDepartmentName(c);
+    const subItems = collectNotAchievedSubcriteriaItems(c);
+
+    if (subItems.length === 0) {
+      return;
+    }
+
+    subItems.forEach((sub, groupIndex) => {
+      stt += 1;
+      rows.push({
+        stt,
+        criteriaId: String(c._id),
+        code: c.code,
+        criteriaName: c.name,
+        groupIndex,
+        groupSize: subItems.length,
+        currentLevel,
+        expectedLevel,
+        levelNumber: sub.levelNumber,
+        subcriteriaText: sub.subcriteriaText,
+        isDone: sub.isDone,
+        highlightRed: sub.highlightRed,
+        expectedLevelCompletionDate: c.expectedLevelCompletionDate,
+        departmentName,
+        note: '',
+      });
+    });
+  });
+
+  return rows;
+}
+
 function sortCriteriaForMatrix(a, b) {
   const partCmp = normalizePartKey(a).localeCompare(normalizePartKey(b), 'vi');
   if (partCmp !== 0) return partCmp;
@@ -368,5 +474,7 @@ module.exports = {
   buildSummary,
   buildBelowLevel4,
   buildNotAchievedCriteria,
+  buildNotAchievedSubcriteria,
+  collectNotAchievedSubcriteriaItems,
   buildMatrixGrouped,
 };
