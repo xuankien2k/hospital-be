@@ -28,7 +28,7 @@ const canManageCriteria = (req, res, next) => {
     return res.status(403).json({ message: 'Bạn không có quyền quản lý tiêu chí' });
 };
 
-// Tạo tiêu chí: admin, quality_admin, trưởng khoa/phòng (department)
+// Tạo tiêu chí: admin, quality_admin
 const canCreateCriteria = (req, res, next) => {
     const role = req.user && req.user.role;
     if (roleCanCreateCriteria(role)) {

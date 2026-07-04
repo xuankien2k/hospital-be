@@ -5,7 +5,7 @@ const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const { canManageCriteria, canCreateCriteria } = require('../middleware/adminOrDepartment');
 
-// Tạo tiêu chí (admin, quality_admin, trưởng khoa/phòng)
+// Tạo tiêu chí (admin, quality_admin)
 router.post('/create', auth, canCreateCriteria, criteriaController.createCriteria);
 
 // Cập nhật tiêu chí (admin hoặc Khoa/phòng — để chỉnh sửa, phân công)

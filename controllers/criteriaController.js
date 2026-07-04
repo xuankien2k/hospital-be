@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 const Department = require('../models/Department');
 const { CRITERIA_EXCLUDED_DEPARTMENT_NAMES } = require('../constants/departments');
 const { getCriteriaDepartmentFilter, applyDepartmentToCriteria, buildDepartmentIdFilter, getUserWithDepartment, assertDepartmentHeadCanAssignDepartment } = require('../utils/departmentAccess');
+const {
+    isRestrictedCriteriaEditor,
+    validateLevelsStructure,
+    mergeRestrictedLevelsUpdate,
+} = require('../utils/criteriaUpdateAccess');
 
 async function validateCriteriaDepartmentId(departmentId) {
     if (!departmentId) {
@@ -36,7 +41,7 @@ const normalizeLevels = (levels = []) => {
     }));
 };
 
-// Tạo mới tiêu chí (admin, quality_admin, trưởng khoa/phòng)
+// Tạo mới tiêu chí (admin, quality_admin)
 exports.createCriteria = async (req, res) => {
     try {
         const { code, name, part, chapter, description, expectedCompletionDate, assignedUser, levels, expectedLevel, expectedLevelCompletionDate, departmentId } = req.body;
@@ -52,13 +57,6 @@ exports.createCriteria = async (req, res) => {
         const deptCheck = await validateCriteriaDepartmentId(departmentId);
         if (!deptCheck.ok) {
             return res.status(400).json({ message: deptCheck.message });
-        }
-
-        if (req.user?.role === 'department') {
-            const access = await assertDepartmentHeadCanAssignDepartment(req.user.userId, departmentId);
-            if (!access.ok) {
-                return res.status(403).json({ message: access.message });
-            }
         }
 
         const newCriteria = new Criteria({
@@ -114,12 +112,27 @@ exports.updateCriteria = async (req, res) => {
             if (criteriaDeptId && userDeptId && String(criteriaDeptId) !== String(userDeptId)) {
                 return res.status(403).json({ message: 'Bạn chỉ được sửa tiêu chí thuộc khoa/phòng của mình' });
             }
-            if (departmentId !== undefined) {
-                const access = await assertDepartmentHeadCanAssignDepartment(req.user.userId, departmentId);
-                if (!access.ok) {
-                    return res.status(403).json({ message: access.message });
-                }
+        }
+
+        if (isRestrictedCriteriaEditor(req.user?.role)) {
+            if (!levels) {
+                return res.status(400).json({ message: 'Không có dữ liệu cập nhật' });
             }
+            if (!validateLevelsStructure(criteria.levels, levels)) {
+                return res.status(403).json({
+                    message: 'Không được thêm, xóa hoặc đổi tên tiểu mục',
+                });
+            }
+            const mergedLevels = mergeRestrictedLevelsUpdate(criteria.levels, levels);
+            criteria.levels = mergedLevels;
+            criteria.markModified('levels');
+            criteria.currentLevel = Criteria.calculateCurrentLevel(mergedLevels);
+            await criteria.save();
+
+            return res.json({
+                message: 'Cập nhật tiêu chí thành công',
+                criteria,
+            });
         }
 
         // Nếu cập nhật mã và khác với mã hiện tại, kiểm tra trùng lặp

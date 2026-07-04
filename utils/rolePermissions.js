@@ -21,7 +21,7 @@ function canUpdateUsers(role) {
 }
 
 function canCreateCriteria(role) {
-  return isContentAdmin(role) || role === 'department';
+  return isContentAdmin(role);
 }
 
 module.exports = {
