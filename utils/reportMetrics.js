@@ -261,6 +261,13 @@ function getLevelSubCriterias(criteria, levelNumber) {
   return level?.subCriterias || [];
 }
 
+function getSubcriteriaOrderNumber(criteria, levelNumber, subIndex) {
+  const countBefore = (criteria.levels || [])
+    .filter((level) => Number(level.levelNumber) < levelNumber)
+    .reduce((acc, level) => acc + (level.subCriterias?.length || 0), 0);
+  return countBefore + subIndex + 1;
+}
+
 function collectNotAchievedSubcriteriaItems(criteria) {
   const currentLevel = getEffectiveCurrentLevel(criteria);
   const expectedLevel = getEffectiveExpectedLevel(criteria);
@@ -273,6 +280,7 @@ function collectNotAchievedSubcriteriaItems(criteria) {
       levelNumber,
       subcriteriaText: text,
       subIndex,
+      subOrderNumber: getSubcriteriaOrderNumber(criteria, levelNumber, subIndex),
       isDone: options.isDone,
       highlightRed: options.highlightRed,
     });
@@ -346,6 +354,7 @@ function buildNotAchievedSubcriteria(criteriaList) {
         expectedLevel,
         levelNumber: sub.levelNumber,
         subcriteriaText: sub.subcriteriaText,
+        subOrderNumber: sub.subOrderNumber,
         isDone: sub.isDone,
         highlightRed: sub.highlightRed,
         expectedLevelCompletionDate: c.expectedLevelCompletionDate,

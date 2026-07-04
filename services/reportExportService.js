@@ -62,12 +62,13 @@ function buildExportPayload(report) {
 
   const notAchievedSubcriteria = (report.notAchievedSubcriteria || []).map((row) => {
     const prefix = row.levelNumber ? `Mức ${row.levelNumber}: ` : '';
+    const orderPrefix = row.subOrderNumber != null ? `${row.subOrderNumber}.` : '';
     const suffix = row.isDone ? ' (đã đạt)' : '';
     return {
       code: row.code,
       currentLevel: String(row.currentLevel),
       expectedLevel: String(row.expectedLevel ?? ''),
-      subcriteriaText: `${prefix}${row.subcriteriaText}${suffix}`,
+      subcriteriaText: `${prefix}${orderPrefix}${row.subcriteriaText}${suffix}`,
       completionDate: formatReportDate(row.expectedLevelCompletionDate),
       departmentName: row.departmentName,
       note: '',
