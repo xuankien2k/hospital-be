@@ -13,7 +13,7 @@ function isContentAdmin(role) {
 }
 
 function canViewAllCriteria(role) {
-  return isContentAdmin(role);
+  return isContentAdmin(role) || role === 'director';
 }
 
 function canUpdateUsers(role) {

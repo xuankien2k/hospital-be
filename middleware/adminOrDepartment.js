@@ -18,11 +18,11 @@ const canUpdateUsers = (req, res, next) => {
     return res.status(403).json({ message: 'Bạn không có quyền cập nhật người dùng' });
 };
 
-// Quản lý tiêu chí (update): admin, quality_admin, department, director, criteria_officer
-// Lưu ý: quyền chi tiết của criteria_officer (chỉ sửa tiêu chí được giao; không đổi status) được kiểm tra thêm ở controller.
+// Quản lý tiêu chí (update): admin, quality_admin, department, criteria_officer
+// Ban Giám đốc chỉ xem — không được cập nhật tiêu chí.
 const canManageCriteria = (req, res, next) => {
     const role = req.user && req.user.role;
-    if (role === 'admin' || role === 'quality_admin' || role === 'department' || role === 'director' || role === 'criteria_officer') {
+    if (role === 'admin' || role === 'quality_admin' || role === 'department' || role === 'criteria_officer') {
         return next();
     }
     return res.status(403).json({ message: 'Bạn không có quyền quản lý tiêu chí' });

@@ -96,6 +96,10 @@ exports.updateCriteria = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy tiêu chí' });
         }
 
+        if (req.user?.role === 'director') {
+            return res.status(403).json({ message: 'Ban Giám đốc chỉ có quyền xem tiêu chí' });
+        }
+
         // Cán bộ phụ trách tiêu chí chỉ được cập nhật tiêu chí được phân công cho chính mình.
         if (req.user?.role === 'criteria_officer') {
             const isAssignedToCurrentUser =
