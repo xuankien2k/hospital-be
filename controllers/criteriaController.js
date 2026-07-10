@@ -2,7 +2,7 @@ const Criteria = require('../models/Criteria');
 const mongoose = require('mongoose');
 const Department = require('../models/Department');
 const { CRITERIA_EXCLUDED_DEPARTMENT_NAMES } = require('../constants/departments');
-const { getCriteriaDepartmentFilter, applyDepartmentToCriteria, buildDepartmentIdFilter, getUserWithDepartment, assertDepartmentHeadCanAssignDepartment } = require('../utils/departmentAccess');
+const { getCriteriaDepartmentFilter, applyDepartmentToCriteria, buildDepartmentIdFilter, getUserWithDepartment, assertDepartmentHeadCanAssignDepartment, userCanAccessCriteria } = require('../utils/departmentAccess');
 const {
     isRestrictedCriteriaEditor,
     validateLevelsStructure,
@@ -100,20 +100,17 @@ exports.updateCriteria = async (req, res) => {
             return res.status(403).json({ message: 'Ban Giám đốc chỉ có quyền xem tiêu chí' });
         }
 
-        // Cán bộ phụ trách tiêu chí chỉ được cập nhật tiêu chí được phân công cho chính mình.
+        // Cán bộ phụ trách: cập nhật các tiêu chí cùng phạm vi danh sách (khoa/phòng của mình).
         if (req.user?.role === 'criteria_officer') {
-            const isAssignedToCurrentUser =
-                criteria.assignedUser && criteria.assignedUser.toString() === req.user.userId;
-            if (!isAssignedToCurrentUser) {
-                return res.status(403).json({ message: 'Bạn chỉ được cập nhật tiêu chí được phân công' });
+            const canAccess = await userCanAccessCriteria(req.user.userId, req.user.role, criteria);
+            if (!canAccess) {
+                return res.status(403).json({ message: 'Bạn không có quyền cập nhật tiêu chí này' });
             }
         }
 
         if (req.user?.role === 'department') {
-            const user = await getUserWithDepartment(req.user.userId);
-            const userDeptId = user?.departmentId?._id || user?.departmentId;
-            const criteriaDeptId = criteria.departmentId;
-            if (criteriaDeptId && userDeptId && String(criteriaDeptId) !== String(userDeptId)) {
+            const canAccess = await userCanAccessCriteria(req.user.userId, req.user.role, criteria);
+            if (!canAccess) {
                 return res.status(403).json({ message: 'Bạn chỉ được sửa tiêu chí thuộc khoa/phòng của mình' });
             }
         }
@@ -274,6 +271,12 @@ exports.getDetail = async (req, res) => {
         if (!criteria) {
             return res.status(404).json({ message: 'Không tìm thấy tiêu chí' });
         }
+
+        const canAccess = await userCanAccessCriteria(req.user.userId, req.user.role, criteria);
+        if (!canAccess) {
+            return res.status(403).json({ message: 'Bạn không có quyền xem tiêu chí này' });
+        }
+
         return res.json({
             message: 'Lấy chi tiết tiêu chí thành công',
             criteria

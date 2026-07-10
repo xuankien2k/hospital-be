@@ -63,6 +63,41 @@ async function getCriteriaDepartmentFilter(userId, role) {
   return NO_DEPARTMENT_CRITERIA_CONDITION;
 }
 
+function getCriteriaDepartmentId(criteria) {
+  if (!criteria) return null;
+  return criteria.departmentId?._id || criteria.departmentId || null;
+}
+
+async function getUserDepartmentId(userId) {
+  const user = await getUserWithDepartment(userId);
+  if (!user) return null;
+
+  if (user.departmentId) {
+    return user.departmentId._id || user.departmentId;
+  }
+
+  const legacyName = user.department ? String(user.department).trim() : '';
+  if (!legacyName) return null;
+
+  const dept = await Department.findOne({ name: legacyName });
+  return dept?._id || null;
+}
+
+/** Cùng phạm vi với bộ lọc danh sách tiêu chí (getCriteriaDepartmentFilter). */
+async function userCanAccessCriteria(userId, role, criteria) {
+  if (await userCanViewAllCriteria(userId, role)) return true;
+
+  const userDeptId = await getUserDepartmentId(userId);
+  const criteriaDeptId = getCriteriaDepartmentId(criteria);
+
+  if (userDeptId) {
+    if (!criteriaDeptId) return true;
+    return String(criteriaDeptId) === String(userDeptId);
+  }
+
+  return !criteriaDeptId;
+}
+
 async function resolveDepartmentId(departmentId) {
   if (!departmentId) return null;
   const dept = await Department.findById(departmentId);
@@ -142,6 +177,9 @@ module.exports = {
   getDepartmentName,
   userCanViewAllCriteria,
   getCriteriaDepartmentFilter,
+  getUserDepartmentId,
+  getCriteriaDepartmentId,
+  userCanAccessCriteria,
   resolveDepartmentId,
   applyDepartmentToUser,
   applyDepartmentToCriteria,
