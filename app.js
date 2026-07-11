@@ -8,6 +8,7 @@ const userRoutes = require('./routes/user');
 const criteriaRoutes = require('./routes/criteria');
 const reportRoutes = require('./routes/report');
 const departmentRoutes = require('./routes/department');
+const { startMonthlySnapshotScheduler } = require('./jobs/monthlySnapshotScheduler');
 const app = express();
 
 // Kết nối DB
@@ -28,4 +29,5 @@ app.use('/api/departments', departmentRoutes);
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startMonthlySnapshotScheduler();
 });
