@@ -7,6 +7,8 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "generate:report-template": "node scripts/generate-report-template.js",
+    "seed:trend-snapshots": "node scripts/seedTrendSnapshots.js",
+    "migrate:snapshot-demo-indexes": "node scripts/migrateSnapshotDemoIndexes.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -5,6 +5,7 @@ const {
   captureMonthSnapshot,
   listAvailablePeriods,
 } = require('../services/trendReportService');
+const { isTrendsDemoMode } = require('../utils/trendsDemoMode');
 
 exports.getReport = async (req, res) => {
   try {
@@ -47,6 +48,7 @@ exports.getTrends = async (req, res) => {
     return res.json({
       message: 'Lấy dữ liệu xu hướng thành công',
       trend,
+      demoMode: trend.demoMode === true,
     });
   } catch (error) {
     console.error('Lỗi báo cáo xu hướng:', error);
@@ -60,6 +62,7 @@ exports.getSnapshots = async (req, res) => {
     return res.json({
       message: 'Lấy danh sách mốc snapshot thành công',
       periods,
+      demoMode: isTrendsDemoMode(),
     });
   } catch (error) {
     console.error('Lỗi danh sách snapshot:', error);

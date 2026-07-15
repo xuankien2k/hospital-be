@@ -1,6 +1,11 @@
 const Criteria = require('../models/Criteria');
 const ReportMonthSnapshot = require('../models/ReportMonthSnapshot');
 const {
+  getProductionSnapshotFilter,
+  getSnapshotScopeFilter,
+  PRODUCTION_SNAPSHOT_TYPES,
+} = require('../utils/trendsDemoMode');
+const {
   isExcludedFromEvaluation,
   buildSummary,
   getCriteriaLevel,
@@ -51,7 +56,10 @@ async function loadAppliedCriteria() {
 
 async function captureMonthSnapshot({ force = false, snapshotType = 'monthly_auto' } = {}) {
   const { year, month, periodKey } = getCurrentPeriod();
-  const existing = await ReportMonthSnapshot.findOne({ periodKey });
+  const existing = await ReportMonthSnapshot.findOne({
+    periodKey,
+    snapshotType: { $in: PRODUCTION_SNAPSHOT_TYPES },
+  });
 
   if (existing && !force) {
     return { created: false, snapshot: existing };
@@ -89,14 +97,18 @@ async function captureMonthSnapshot({ force = false, snapshotType = 'monthly_aut
   };
 
   const snapshot = existing
-    ? await ReportMonthSnapshot.findOneAndUpdate({ periodKey }, payload, { new: true })
+    ? await ReportMonthSnapshot.findOneAndUpdate(
+        { periodKey, snapshotType: existing.snapshotType },
+        payload,
+        { new: true },
+      )
     : await ReportMonthSnapshot.create(payload);
 
   return { created: !existing, snapshot };
 }
 
 async function listAvailablePeriods() {
-  const snapshots = await ReportMonthSnapshot.find({})
+  const snapshots = await ReportMonthSnapshot.find(getSnapshotScopeFilter())
     .sort({ year: -1, month: -1 })
     .select('year month periodKey snapshotAt snapshotType summary.overallScore summary.totalApplied');
 

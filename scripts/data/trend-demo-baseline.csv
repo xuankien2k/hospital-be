@@ -1,0 +1,118 @@
+﻿BÁO CÁO XU HƯỚNG SNAPSHOT
+Kỳ lọc,1 tháng
+Số mốc snapshot,1
+Xuất lúc,15/07/2026 18:36
+
+=== ĐIỂM TRUNG BÌNH CHUNG ===
+Mốc,Điểm TB,Số TC áp dụng,Tỷ lệ áp dụng (%)
+T7/2026,4.26,80,96.4
+
+=== THEO NHÓM TIÊU CHÍ ===
+Nhóm tiêu chí,T7/2026 (Điểm TB),T7/2026 (Số TC)
+A. Hướng đến người bệnh,4.21,19
+B. Phát triển nguồn nhân lực,3.71,14
+C. Hoạt động chuyên môn,3.91,32
+D. Cải tiến chất lượng,3.91,11
+E. Tiêu chí chuyên khoa,4.50,4
+
+=== THEO KHOA/PHÒNG ===
+Khoa/phòng,T7/2026 (Điểm TB),T7/2026 (Hạng),T7/2026 (Số TC)
+Phụ sản,4.67,1,3
+Hành chính quản trị,4.25,2,12
+Kế hoạch tổng hợp,4.00,3,9
+Tài chính kế toán,4.00,4,2
+Công tác xã hội,4.00,5,2
+Quản lý chất lượng,4.00,6,11
+Chỉ đạo tuyến,4.00,7,2
+Công nghệ thông tin,4.00,8,2
+Điều dưỡng,4.00,9,4
+Dinh dưỡng,4.00,10,5
+Dược,4.00,11,6
+Nhi,4.00,12,1
+Kiểm soát nhiễm khuẩn,3.75,13,4
+Khoa khám bệnh,3.67,14,3
+Tổ chức cán bộ,3.67,15,12
+Xét nghiệm,3.50,16,2
+
+=== CHI TIẾT TỪNG TIÊU CHÍ ===
+Mã TC,Tên tiêu chí,Nhóm tiêu chí,Khoa/phòng,T7/2026
+A1.1,"Người bệnh được chỉ dẫn rõ ràng, đón tiếp và hướng dẫn khoa học, cụ thể",A. Hướng đến người bệnh,Hành chính quản trị,5
+A1.2,"Người bệnh, người nhà người bệnh được chờ đợi trong phòng đầy đủ tiện nghi và được vận chuyển phù hợp với tình trạng bệnh tật",A. Hướng đến người bệnh,Hành chính quản trị,3
+A1.3,"Cải tiến quy trình khám bệnh, đáp ứng sự hài lòng người bệnh",A. Hướng đến người bệnh,Khoa khám bệnh,4
+A1.4,Bệnh viện bảo đảm các điều kiện cấp cứu người bệnh kịp thời,A. Hướng đến người bệnh,Kế hoạch tổng hợp,4
+A1.5,"Người bệnh được làm các thủ tục đăng ký, khám bệnh theo đúng thứ tự bảo đảm tính công bằng và mức ưu tiên",A. Hướng đến người bệnh,Khoa khám bệnh,4
+A1.6,"Người bệnh được hướng dẫn và bố trí làm xét nghiệm, chẩn đoán hình ảnh, thăm dò chức năngtheo trình tự thuận tiện",A. Hướng đến người bệnh,Khoa khám bệnh,3
+A2.1,Người bệnh điều trị nội trú được nằm một người một giường,A. Hướng đến người bệnh,Hành chính quản trị,3
+A2.2,Người bệnh được sử dụng buồng vệ sinh sạch sẽ và đầy đủ các phương tiện,A. Hướng đến người bệnh,Hành chính quản trị,4
+A2.3,"Người bệnh được cung cấp vật dụng cá nhân đầy đủ, sạch sẽ, chất lượng tốt",A. Hướng đến người bệnh,Hành chính quản trị,5
+A2.4,"Người bệnh được hưởng các tiện nghi bảo đảm sức khỏe, nâng cao thể trạng và tâm lý",A. Hướng đến người bệnh,Hành chính quản trị,3
+A2.5,"Người khuyết tật được tiếp cận đầy đủ với các khoa, phòng và dịch vụ khám, chữa bệnh trong bệnh viện",A. Hướng đến người bệnh,Hành chính quản trị,5
+A3.1,"Người bệnh được điều trị trong môi trường, cảnh quan xanh, sạch, đẹp",A. Hướng đến người bệnh,Hành chính quản trị,5
+A3.2,"Người bệnh được khám và điều trị trong khoa, phòng gọn gàng, ngăn nắp",A. Hướng đến người bệnh,Hành chính quản trị,5
+A4.1,Người bệnh được cung cấp thông tin và tham gia vào quá trình điều trị,A. Hướng đến người bệnh,Kế hoạch tổng hợp,5
+A4.2,Người bệnh được tôn trọng quyền riêng tư,A. Hướng đến người bệnh,Kế hoạch tổng hợp,4
+A4.3,"Người bệnh được nộp viện phí thuận tiện, công khai, minh bạch, chính xác",A. Hướng đến người bệnh,Tài chính kế toán,4
+A4.4,Người bệnh được hưởng lợi từ chủ trương xã hội hóa y tế,A. Hướng đến người bệnh,Tài chính kế toán,4
+A4.5,"Người bệnh có ý kiến phàn nàn, thắc mắc hoặc khen ngợi được bệnh viện tiếp nhận, phản hồi, giải quyết kịp thời",A. Hướng đến người bệnh,Công tác xã hội,5
+A4.6,"Bệnh viện thực hiện khảo sát, đánh giá sự hài lòng người bệnh và tiến hành các biện pháp can thiệp",A. Hướng đến người bệnh,Quản lý chất lượng,5
+B1.1,Xây dựng kế hoạch phát triển nhân lực bệnh viện,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,3
+B1.2,Bảo đảm và duy trì ổn định số lượng nhân lực bệnh viện,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,3
+B1.3,Bảo đảm cơ cấu chức danh nghề nghiệp và xác định vị trí việc làm của nhân lực bệnh viện,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,3
+B2.1,Nhân viên y tế được đào tạo liên tục và phát triển kỹ năng nghề nghiệp,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,2
+B2.2,"Nhân viên y tế được nâng cao kỹ năng giao tiếp, ứng xử, y đức",B. Phát triển nguồn nhân lực,Công tác xã hội,3
+B2.3,Bệnh viện duy trì và phát triển bền vững chất lượng nguồn nhân lực,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,4
+B3.1,"Bảo đảm chính sách tiền lương, chế độ đãi ngộ của nhân viên y tế",B. Phát triển nguồn nhân lực,Tổ chức cán bộ,4
+B3.2,Bảo đảm điều kiện làm việc và vệ sinh lao động cho nhân viên y tế,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,3
+B3.3,"Sức khỏe, đời sống tinh thần của nhân viên y tế được quan tâm và cải thiện",B. Phát triển nguồn nhân lực,Tổ chức cán bộ,4
+B3.4,Tạo dựng môi trường làm việc tích cực và nâng cao trình độ chuyên môn,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,5
+B4.1,"Xây dựng kế hoạch, chiến lược phát triển bệnh viện và công bố công khai ",B. Phát triển nguồn nhân lực,Tổ chức cán bộ,3
+B4.2,Triển khai thực hiện văn bản chỉ đạo dành cho bệnh viện,B. Phát triển nguồn nhân lực,Hành chính quản trị,5
+B4.3,Bảo đảm chất lượng nguồn nhân lực quản lý bệnh viện,B. Phát triển nguồn nhân lực,Tổ chức cán bộ,5
+B4.4,"Bồi dưỡng, phát triển đội ngũ lãnh đạo và quản lý kế cận ",B. Phát triển nguồn nhân lực,Tổ chức cán bộ,5
+C1.1,"Bảo đảm an ninh, trật tự bệnh viện",C. Hoạt động chuyên môn,Hành chính quản trị,4
+C1.2,"Bảo đảm an toàn điện và phòng cháy, chữa cháy",C. Hoạt động chuyên môn,Hành chính quản trị,4
+C2.1,"Hồ sơ bệnh án được lập đầy đủ, chính xác, khoa học",C. Hoạt động chuyên môn,Kế hoạch tổng hợp,4
+C2.2,"Hồ sơ bệnh án được quản lý chặt chẽ, đầy đủ, khoa học",C. Hoạt động chuyên môn,Kế hoạch tổng hợp,4
+C3.1,Quản lý tốt cơ sở dữ liệu và thông tin y tế,C. Hoạt động chuyên môn,Công nghệ thông tin,4
+C3.2,Thực hiện các giải pháp ứng dụng công nghệ thông tin trong quản lý và hoạt động chuyên môn  ,C. Hoạt động chuyên môn,Công nghệ thông tin,4
+C4.1.,Thiết lập và hoàn thiện hệ thống kiểm soát nhiễm khuẩn,C. Hoạt động chuyên môn,Kiểm soát nhiễm khuẩn,3
+C4.2,Xây dựng và hướng dẫn nhân viên y tế thực hiện các quy trình kiểm soát nhiễm khuẩn trong bệnh viện,C. Hoạt động chuyên môn,Kiểm soát nhiễm khuẩn,4
+C4.3,Triển khai chương trình và giám sát tuân thủ vệ sinh tay,C. Hoạt động chuyên môn,Kiểm soát nhiễm khuẩn,4
+C4.4,"Giám sát, đánh giá việc triển khai kiểm soát nhiễm khuẩn trong bệnh viện",C. Hoạt động chuyên môn,Kiểm soát nhiễm khuẩn,4
+C5.2,"Nghiên cứu và triển khai áp dụng các kỹ thuật mới, phương pháp mới",C. Hoạt động chuyên môn,Kế hoạch tổng hợp,4
+C5.3,"Áp dụng các hướng dẫn quy trình kỹ thuật khám bệnh, chữa bệnh và triển khai các biện pháp giám sát chất lượng",C. Hoạt động chuyên môn,Kế hoạch tổng hợp,4
+C5.4,Xây dựng các hướng dẫn chẩn đoán và điều trị,C. Hoạt động chuyên môn,Kế hoạch tổng hợp,4
+C5.5,Áp dụng các hướng dẫn chẩn đoán và điều trị đã ban hành và giám sát việc thực hiện,C. Hoạt động chuyên môn,Kế hoạch tổng hợp,3
+C6.1,Hệ thống quản lý điều dưỡng được thiết lập đầy đủ và hoạt động hiệu quả,C. Hoạt động chuyên môn,Điều dưỡng,4
+C6.2,"Người bệnh được tư vấn, giáo dục sức khỏe khi điều trị và trước khi ra viện",C. Hoạt động chuyên môn,Điều dưỡng,4
+C6.3,"Người bệnh được theo dõi, chăm sóc phù hợp với tình trạng bệnh và phân cấp chăm sóc",C. Hoạt động chuyên môn,Điều dưỡng,4
+C7.1,Hệ thống tổ chức thực hiện công tác dinh dưỡng và tiết chế được thiết lập đầy đủ,C. Hoạt động chuyên môn,Dinh dưỡng,4
+C7.2,Bảo đảm cơ sở vật chất thực hiện công tác dinh dưỡng và tiết chê,C. Hoạt động chuyên môn,Dinh dưỡng,4
+C7.3,"Người bệnh được đánh giá, theo dõi tình trạng dinh dưỡng trong thời gian nằm viện",C. Hoạt động chuyên môn,Dinh dưỡng,4
+C7.4,"Người bệnh được hướng dẫn, tư vấn chế độ ăn phù hợp với bệnh lý",C. Hoạt động chuyên môn,Dinh dưỡng,4
+C7.5,Người bệnh được cung cấp chế độ dinh dưỡng phù hợp với bệnh lý trong thời gian nằm viện,C. Hoạt động chuyên môn,Dinh dưỡng,4
+C8.1,Bảo đảm năng lực thực hiện các xét nghiệm theo phân tuyến kỹ thuật,C. Hoạt động chuyên môn,Xét nghiệm,4
+C8.2,Thực hiện quản lý chất lượng các xét nghiệm ,C. Hoạt động chuyên môn,Xét nghiệm,3
+C9.1,Bệnh viện thiết lập hệ thống tổ chức hoạt động dược,C. Hoạt động chuyên môn,Dược,4
+C9.2,Bảo đảm cơ sở vật chất và các quy trình kỹ thuật cho hoạt động Dược,C. Hoạt động chuyên môn,Dược,4
+C9.3,"Cung ứng thuốc, hóa chất và vật tư y tế tiêu hao đầy đủ, kịp thời, bảo đảm chất lượng",C. Hoạt động chuyên môn,Dược,4
+C9.4,"Sử dụng thuốc an toàn, hợp lý",C. Hoạt động chuyên môn,Dược,4
+C9.5,"Thông tin thuốc, theo dõi và báo cáo phản ứng có hại của thuốc kịp thời, đầy đủ và có chất lượng",C. Hoạt động chuyên môn,Dược,4
+C9.6,Hội đồng thuốc và điều trị được thiết lập và hoạt động hiệu quả,C. Hoạt động chuyên môn,Dược,4
+C10.1,Tích cực triển khai hoạt động nghiên cứu khoa học,C. Hoạt động chuyên môn,Chỉ đạo tuyến,4
+C10.2,"Áp dụng kết quả nghiên cứu khoa học vào việc cải tiến chất lượng khám, chữa bệnh và nâng cao hoạt động bệnh viện",C. Hoạt động chuyên môn,Chỉ đạo tuyến,4
+D1.1,Thiết lập hệ thống quản lý chất lượng bệnh viện,D. Cải tiến chất lượng,Quản lý chất lượng,4
+D1.2,"Xây dựng, triển khai kế hoạch và đề án cải tiến chất lượng",D. Cải tiến chất lượng,Quản lý chất lượng,5
+D1.3,Xây dựng văn hóa chất lượng bệnh viện,D. Cải tiến chất lượng,Quản lý chất lượng,5
+D2.1,"Phòng ngừa các nguy cơ, diễn biến bất thường xảy ra với người bệnh",D. Cải tiến chất lượng,Quản lý chất lượng,2
+D2.2,"Xây dựng hệ thống báo cáo, phân tích sự cố y khoa và tiến hành các giải pháp khắc phục",D. Cải tiến chất lượng,Quản lý chất lượng,5
+D2.3,Thực hiện các biện pháp phòng ngừa để giảm thiểu các sự cố y khoa,D. Cải tiến chất lượng,Quản lý chất lượng,4
+D2.4,Bảo đảm xác định chính xác người bệnh khi cung cấp dịch vụ,D. Cải tiến chất lượng,Điều dưỡng,4
+D2.5,Phòng ngừa nguy cơ người bệnh bị trượt ngã,D. Cải tiến chất lượng,Quản lý chất lượng,3
+D3.1,Đánh giá chính xác thực trạng và công bố công khai chất lượng bệnh viện,D. Cải tiến chất lượng,Quản lý chất lượng,4
+D3.2,Đo lường và giám sát cải tiến chất lượng bệnh viện,D. Cải tiến chất lượng,Quản lý chất lượng,4
+D3.3,"Hợp tác với cơ quan quản lý trong việc xây dựng công cụ, triển khai, báo cáo hoạt động quản lý chất lượng bệnh viện",D. Cải tiến chất lượng,Quản lý chất lượng,3
+E1.1,Thiết lập hệ thống tổ chức chăm sóc sản khoa và sơ sinh,E. Tiêu chí chuyên khoa,Phụ sản,4
+E1.2,"Hoạt động truyền thông về sức khỏe sinh sản, sức khỏe bà mẹ,  trẻ em",E. Tiêu chí chuyên khoa,Phụ sản,5
+E1.3,Thực hành tốt nuôi con bằng sữa mẹ,E. Tiêu chí chuyên khoa,Phụ sản,5
+E2.1,Bệnh viện thiết lập hệ thống tổ chức chăm sóc nhi khoa,E. Tiêu chí chuyên khoa,Nhi,4

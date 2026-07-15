@@ -21,16 +21,22 @@ const reportMonthSnapshotSchema = new mongoose.Schema(
   {
     year: { type: Number, required: true },
     month: { type: Number, required: true, min: 1, max: 12 },
-    periodKey: { type: String, required: true, unique: true },
+    periodKey: { type: String, required: true },
     snapshotAt: { type: Date, default: Date.now },
-    snapshotType: { type: String, enum: ['monthly_auto', 'manual'], default: 'monthly_auto' },
+    snapshotType: {
+      type: String,
+      enum: ['monthly_auto', 'manual', 'demo'],
+      default: 'monthly_auto',
+    },
     summary: { type: mongoose.Schema.Types.Mixed, required: true },
     criteria: [criteriaSnapshotSchema],
   },
   { timestamps: true },
 );
 
-reportMonthSnapshotSchema.index({ year: 1, month: 1 }, { unique: true });
+reportMonthSnapshotSchema.index({ periodKey: 1, snapshotType: 1 }, { unique: true });
+reportMonthSnapshotSchema.index({ year: 1, month: 1, snapshotType: 1 }, { unique: true });
+reportMonthSnapshotSchema.index({ snapshotType: 1, snapshotAt: -1 });
 reportMonthSnapshotSchema.index({ snapshotAt: -1 });
 
 module.exports = mongoose.model('ReportMonthSnapshot', reportMonthSnapshotSchema);

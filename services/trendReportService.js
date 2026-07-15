@@ -10,6 +10,14 @@ const {
   captureMonthSnapshot,
   listAvailablePeriods,
 } = require('./snapshotService');
+const { getSnapshotScopeFilter, isTrendsDemoMode } = require('../utils/trendsDemoMode');
+
+const PERIOD_GRANULARITY = {
+  '1m': 'month',
+  '1q': 'quarter',
+  '6m': 'halfyear',
+  '1y': 'year',
+};
 
 const PERIOD_MONTH_MAP = {
   '1m': 1,
@@ -17,6 +25,81 @@ const PERIOD_MONTH_MAP = {
   '6m': 6,
   '1y': 12,
 };
+
+function getBucketKey(year, month, granularity) {
+  if (granularity === 'month') {
+    return `${year}-${String(month).padStart(2, '0')}`;
+  }
+
+  if (granularity === 'quarter') {
+    const quarter = Math.ceil(month / 3);
+    return `${year}-Q${quarter}`;
+  }
+
+  if (granularity === 'halfyear') {
+    const half = month <= 6 ? 1 : 2;
+    return `${year}-H${half}`;
+  }
+
+  return `${year}`;
+}
+
+function formatBucketLabel(bucketKey, granularity) {
+  if (granularity === 'month') {
+    const match = bucketKey.match(/^(\d{4})-(\d{2})$/);
+    if (match) {
+      return `T${Number(match[2])}/${match[1]}`;
+    }
+  }
+
+  if (granularity === 'quarter') {
+    const match = bucketKey.match(/^(\d{4})-Q([1-4])$/);
+    if (match) {
+      return `Q${match[2]}/${match[1]}`;
+    }
+  }
+
+  if (granularity === 'halfyear') {
+    const match = bucketKey.match(/^(\d{4})-H([12])$/);
+    if (match) {
+      return match[2] === '1' ? `6T1/${match[1]}` : `6T2/${match[1]}`;
+    }
+  }
+
+  if (granularity === 'year') {
+    return `Năm ${bucketKey}`;
+  }
+
+  return bucketKey;
+}
+
+function groupSnapshotsByGranularity(snapshots, period) {
+  const granularity = PERIOD_GRANULARITY[period] || PERIOD_GRANULARITY['1m'];
+  const buckets = new Map();
+
+  snapshots.forEach((snapshot) => {
+    const bucketKey = getBucketKey(snapshot.year, snapshot.month, granularity);
+    if (!buckets.has(bucketKey)) {
+      buckets.set(bucketKey, []);
+    }
+    buckets.get(bucketKey).push(snapshot);
+  });
+
+  return Array.from(buckets.entries())
+    .map(([bucketKey, group]) => {
+      const sorted = group.sort((a, b) => a.year - b.year || a.month - b.month);
+      const lastSnapshot = sorted[sorted.length - 1];
+
+      return {
+        ...lastSnapshot,
+        bucketKey,
+        periodKey: bucketKey,
+        label: formatBucketLabel(bucketKey, granularity),
+        sourceMonthCount: sorted.length,
+      };
+    })
+    .sort((a, b) => a.year - b.year || a.month - b.month);
+}
 
 async function filterSnapshotCriteriaForUser(userId, role, criteria = []) {
   if (await userCanViewAllCriteria(userId, role)) {
@@ -139,16 +222,20 @@ function buildCriteriaTrend(scopedSnapshots) {
 }
 
 async function loadTrendReport(req) {
-  const { period = '1y', part, departmentId } = req.body || {};
-  const monthCount = PERIOD_MONTH_MAP[period] || PERIOD_MONTH_MAP['1y'];
+  const { period = '1m', part, departmentId } = req.body || {};
+  const granularity = PERIOD_GRANULARITY[period] || PERIOD_GRANULARITY['1m'];
 
-  const allSnapshots = await ReportMonthSnapshot.find({}).sort({ year: 1, month: 1 }).lean();
-  const snapshots = allSnapshots.slice(-monthCount);
+  const allSnapshots = await ReportMonthSnapshot.find(getSnapshotScopeFilter())
+    .sort({ year: 1, month: 1 })
+    .lean();
+  const snapshots = groupSnapshotsByGranularity(allSnapshots, period);
 
   if (!snapshots.length) {
     return {
       period,
-      monthCount,
+      granularity,
+      demoMode: isTrendsDemoMode(),
+      monthCount: PERIOD_MONTH_MAP[period] || PERIOD_MONTH_MAP['1m'],
       periods: [],
       overallTrend: [],
       byPartTrend: {},
@@ -188,7 +275,7 @@ async function loadTrendReport(req) {
     }
 
     const summary = buildSummaryFromSnapshotCriteria(criteria);
-    const label = formatPeriodLabel(snapshot.year, snapshot.month);
+    const label = snapshot.label || formatPeriodLabel(snapshot.year, snapshot.month);
 
     overallTrend.push({
       periodKey: snapshot.periodKey,
@@ -239,7 +326,9 @@ async function loadTrendReport(req) {
 
   return {
     period,
-    monthCount,
+    granularity,
+    demoMode: isTrendsDemoMode(),
+    monthCount: PERIOD_MONTH_MAP[period] || PERIOD_MONTH_MAP['1m'],
     periods: overallTrend.map((item) => item.periodKey),
     overallTrend,
     byPartTrend: byPartTrendMap,
@@ -252,7 +341,9 @@ async function loadTrendReport(req) {
 }
 
 module.exports = {
+  PERIOD_GRANULARITY,
   PERIOD_MONTH_MAP,
+  groupSnapshotsByGranularity,
   loadTrendReport,
   captureMonthSnapshot,
   listAvailablePeriods,
