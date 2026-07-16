@@ -1,11 +1,14 @@
 /**
  * Seed snapshot demo cho tab Xu hướng (tách biệt dữ liệu production).
  *
- * Production:
+ * Production (dùng bộ snapshot local đã export):
  *   1. Deploy BE mới
  *   2. node scripts/migrateSnapshotDemoIndexes.js
- *   3. node scripts/seedTrendSnapshots.js --demo --reset
- *   4. Mở tab "Xu hướng demo" trên FE (không cần TRENDS_DEMO_MODE=true)
+ *   3. node scripts/importDemoSnapshots.js --reset
+ *   4. Mở tab "Xu hướng demo" trên FE
+ *
+ * Hoặc sinh lại từ CSV:
+ *   node scripts/seedTrendSnapshots.js --demo --reset
  *
  * Tắt demo (quay lại snapshot thật):
  *   - Đặt TRENDS_DEMO_MODE=false (hoặc xóa biến) + restart BE
