@@ -4,8 +4,8 @@
  * Production:
  *   1. Deploy BE mới
  *   2. node scripts/migrateSnapshotDemoIndexes.js
- *   3. TRENDS_DEMO_MODE=true node scripts/seedTrendSnapshots.js --demo --reset
- *   4. Bật TRENDS_DEMO_MODE=true trên server + restart PM2
+ *   3. node scripts/seedTrendSnapshots.js --demo --reset
+ *   4. Mở tab "Xu hướng demo" trên FE (không cần TRENDS_DEMO_MODE=true)
  *
  * Tắt demo (quay lại snapshot thật):
  *   - Đặt TRENDS_DEMO_MODE=false (hoặc xóa biến) + restart BE

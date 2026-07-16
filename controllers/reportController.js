@@ -5,7 +5,19 @@ const {
   captureMonthSnapshot,
   listAvailablePeriods,
 } = require('../services/trendReportService');
-const { isTrendsDemoMode } = require('../utils/trendsDemoMode');
+const { resolveDemoModeFlag } = require('../utils/trendsDemoMode');
+
+function parseDemoFlag(value) {
+  if (value === true || value === 'true' || value === 1 || value === '1') {
+    return true;
+  }
+
+  if (value === false || value === 'false' || value === 0 || value === '0') {
+    return false;
+  }
+
+  return undefined;
+}
 
 exports.getReport = async (req, res) => {
   try {
@@ -58,11 +70,12 @@ exports.getTrends = async (req, res) => {
 
 exports.getSnapshots = async (req, res) => {
   try {
-    const periods = await listAvailablePeriods();
+    const demo = parseDemoFlag(req.query?.demo);
+    const periods = await listAvailablePeriods({ demo });
     return res.json({
       message: 'Lấy danh sách mốc snapshot thành công',
       periods,
-      demoMode: isTrendsDemoMode(),
+      demoMode: resolveDemoModeFlag(demo),
     });
   } catch (error) {
     console.error('Lỗi danh sách snapshot:', error);

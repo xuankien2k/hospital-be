@@ -22,6 +22,30 @@ function getDemoSnapshotFilter() {
   return { snapshotType: DEMO_SNAPSHOT_TYPE };
 }
 
+function resolveSnapshotScopeFilter(demo) {
+  if (demo === true) {
+    return getDemoSnapshotFilter();
+  }
+
+  if (demo === false) {
+    return getProductionSnapshotFilter();
+  }
+
+  return getSnapshotScopeFilter();
+}
+
+function resolveDemoModeFlag(demo) {
+  if (demo === true) {
+    return true;
+  }
+
+  if (demo === false) {
+    return false;
+  }
+
+  return isTrendsDemoMode();
+}
+
 module.exports = {
   DEMO_SNAPSHOT_TYPE,
   PRODUCTION_SNAPSHOT_TYPES,
@@ -29,4 +53,6 @@ module.exports = {
   getSnapshotScopeFilter,
   getProductionSnapshotFilter,
   getDemoSnapshotFilter,
+  resolveSnapshotScopeFilter,
+  resolveDemoModeFlag,
 };

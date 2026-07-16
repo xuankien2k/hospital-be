@@ -2,8 +2,8 @@ const Criteria = require('../models/Criteria');
 const ReportMonthSnapshot = require('../models/ReportMonthSnapshot');
 const {
   getProductionSnapshotFilter,
-  getSnapshotScopeFilter,
   PRODUCTION_SNAPSHOT_TYPES,
+  resolveSnapshotScopeFilter,
 } = require('../utils/trendsDemoMode');
 const {
   isExcludedFromEvaluation,
@@ -107,8 +107,8 @@ async function captureMonthSnapshot({ force = false, snapshotType = 'monthly_aut
   return { created: !existing, snapshot };
 }
 
-async function listAvailablePeriods() {
-  const snapshots = await ReportMonthSnapshot.find(getSnapshotScopeFilter())
+async function listAvailablePeriods({ demo } = {}) {
+  const snapshots = await ReportMonthSnapshot.find(resolveSnapshotScopeFilter(demo))
     .sort({ year: -1, month: -1 })
     .select('year month periodKey snapshotAt snapshotType summary.overallScore summary.totalApplied');
 

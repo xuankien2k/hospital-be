@@ -10,7 +10,7 @@ const {
   captureMonthSnapshot,
   listAvailablePeriods,
 } = require('./snapshotService');
-const { getSnapshotScopeFilter, isTrendsDemoMode } = require('../utils/trendsDemoMode');
+const { resolveDemoModeFlag, resolveSnapshotScopeFilter } = require('../utils/trendsDemoMode');
 
 const PERIOD_GRANULARITY = {
   '1m': 'month',
@@ -222,10 +222,10 @@ function buildCriteriaTrend(scopedSnapshots) {
 }
 
 async function loadTrendReport(req) {
-  const { period = '1m', part, departmentId } = req.body || {};
+  const { period = '1m', part, departmentId, demo } = req.body || {};
   const granularity = PERIOD_GRANULARITY[period] || PERIOD_GRANULARITY['1m'];
 
-  const allSnapshots = await ReportMonthSnapshot.find(getSnapshotScopeFilter())
+  const allSnapshots = await ReportMonthSnapshot.find(resolveSnapshotScopeFilter(demo))
     .sort({ year: 1, month: 1 })
     .lean();
   const snapshots = groupSnapshotsByGranularity(allSnapshots, period);
@@ -234,7 +234,7 @@ async function loadTrendReport(req) {
     return {
       period,
       granularity,
-      demoMode: isTrendsDemoMode(),
+      demoMode: resolveDemoModeFlag(demo),
       monthCount: PERIOD_MONTH_MAP[period] || PERIOD_MONTH_MAP['1m'],
       periods: [],
       overallTrend: [],
@@ -327,7 +327,7 @@ async function loadTrendReport(req) {
   return {
     period,
     granularity,
-    demoMode: isTrendsDemoMode(),
+    demoMode: resolveDemoModeFlag(demo),
     monthCount: PERIOD_MONTH_MAP[period] || PERIOD_MONTH_MAP['1m'],
     periods: overallTrend.map((item) => item.periodKey),
     overallTrend,
