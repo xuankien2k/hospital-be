@@ -452,7 +452,7 @@ function buildSummary(criteriaList) {
   });
 
   const totalApplied = criteriaList.length;
-  const overallScore = totalApplied ? totalWeightedScore / totalApplied : 0;
+  const overallScore = totalWeight ? totalWeightedScore / totalWeight : 0;
 
   return {
     totalStandard: TOTAL_CRITERIA_STANDARD,
@@ -464,7 +464,7 @@ function buildSummary(criteriaList) {
     overallScore,
     totalWeightedScore,
     totalWeight,
-    weightedAverageByChapter: totalWeight ? totalWeightedScore / totalWeight : 0,
+    weightedAverageByChapter: overallScore,
     byLevel: aggregateByLevel(criteriaList),
     byPart: aggregateByPart(criteriaList),
     byDepartment: aggregateByDepartment(criteriaList),
