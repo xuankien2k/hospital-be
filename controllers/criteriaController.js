@@ -216,7 +216,7 @@ exports.deleteCriteria = async (req, res) => {
 // Lấy danh sách tiêu chí (User chỉ xem tiêu chí được phân công, Admin xem tất cả)
 exports.getList = async (req, res) => {
     try {
-        const { part, chapter, keyword, out_of_date, departmentId } = req.body;
+        const { part, chapter, keyword, out_of_date, departmentId, currentLevel, page = 1, limit = 150 } = req.body;
         const andConditions = [];
 
         if (part) andConditions.push({ part });
@@ -228,6 +228,13 @@ exports.getList = async (req, res) => {
                     { name: { $regex: keyword, $options: 'i' } },
                 ],
             });
+        }
+
+        if (currentLevel !== undefined && currentLevel !== null && currentLevel !== '') {
+            const level = parseInt(currentLevel, 10);
+            if (!Number.isNaN(level)) {
+                andConditions.push({ currentLevel: level });
+            }
         }
 
         if (out_of_date) {
@@ -245,14 +252,25 @@ exports.getList = async (req, res) => {
 
         const filter = andConditions.length > 0 ? { $and: andConditions } : {};
 
+        const pageNum = Math.max(1, parseInt(page, 10) || 1);
+        const requestedLimit = parseInt(limit, 10) || 150;
+        const pageSize = Math.min(500, Math.max(1, requestedLimit));
+        const skip = (pageNum - 1) * pageSize;
+
+        const total = await Criteria.countDocuments(filter);
         const criterias = await Criteria.find(filter)
             .sort({ code: 1 })
+            .skip(skip)
+            .limit(pageSize)
             .populate('assignedUser', 'username email department departmentId')
             .populate('departmentId', 'name');
 
         return res.json({
-            message: 'Lấy danh sách tiêu chí thành côngg',
-            data: criterias
+            message: 'Lấy danh sách tiêu chí thành công',
+            data: criterias,
+            total,
+            page: pageNum,
+            pageSize,
         });
     } catch (error) {
         console.error('Lỗi lấy danh sách tiêu chí:', error);
