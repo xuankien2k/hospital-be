@@ -6,6 +6,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret_jwt_key';
 
 // Đăng ký
 exports.register = async (req, res) => {
+  if (process.env.DISABLE_PUBLIC_REGISTER === 'true') {
+    return res.status(403).json({ message: 'Đăng ký công khai đã bị tắt trên môi trường này' });
+  }
+
   try {
     const { username, password, email, department } = req.body;
 

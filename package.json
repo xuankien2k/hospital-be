@@ -11,6 +11,7 @@
     "export:demo-snapshots": "node scripts/exportDemoSnapshots.js",
     "import:demo-snapshots": "node scripts/importDemoSnapshots.js",
     "migrate:snapshot-demo-indexes": "node scripts/migrateSnapshotDemoIndexes.js",
+    "cron:monthly-snapshot": "node scripts/cronMonthlySnapshot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
